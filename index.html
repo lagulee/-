@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>벽돌 깨기</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a2e;
+      color: #eee;
+      font-family: sans-serif;
+    }
+    h1 { margin: 0 0 12px; font-size: 28px; }
+    #hud {
+      width: 480px;
+      max-width: 100%;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+    canvas {
+      background: #0f0f1e;
+      border: 2px solid #444;
+      max-width: 100%;
+      touch-action: none;
+    }
+    p.help { color: #aaa; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>벽돌 깨기</h1>
+  <div id="hud">
+    <span>점수: <b id="score">0</b></span>
+    <span>최고 점수: <b id="best">0</b></span>
+    <span>생명: <b id="lives">3</b></span>
+  </div>
+  <canvas id="game" width="480" height="560"></canvas>
+  <p class="help">← → 방향키 또는 마우스로 이동 · 스페이스바/클릭으로 시작</p>
+
+  <script src="game.js"></script>
+</body>
+</html>
