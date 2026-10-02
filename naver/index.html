@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>네이버 바로가기</title>
+<meta name="theme-color" content="#03C75A">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="네이버">
+<style>
+  :root { --green: #03C75A; --bg: #f5f6f7; --card: #fff; --text: #222; --sub: #888; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #121212; --card: #1e1e1e; --text: #eee; --sub: #999; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    padding: calc(env(safe-area-inset-top) + 32px) 16px 32px;
+  }
+  main { max-width: 480px; margin: 0 auto; }
+  h1 { color: var(--green); font-size: 40px; text-align: center; margin: 8px 0 24px; letter-spacing: -1px; }
+  form {
+    display: flex; border: 2px solid var(--green); border-radius: 28px;
+    background: var(--card); overflow: hidden;
+  }
+  form input {
+    flex: 1; min-width: 0; border: 0; outline: 0; padding: 14px 18px;
+    font-size: 17px; background: transparent; color: var(--text);
+  }
+  form button { border: 0; background: var(--green); color: #fff; font-size: 16px; font-weight: 700; padding: 0 20px; }
+  .open {
+    display: block; margin: 16px 0 28px; padding: 16px; border-radius: 14px;
+    background: var(--green); color: #fff; text-align: center; font-size: 18px;
+    font-weight: 700; text-decoration: none;
+  }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .grid a {
+    background: var(--card); border-radius: 14px; padding: 14px 4px; text-align: center;
+    text-decoration: none; color: var(--text); font-size: 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  .grid span { display: block; font-size: 26px; margin-bottom: 6px; }
+  .auto { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 28px; color: var(--sub); font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>NAVER</h1>
+
+  <form action="https://search.naver.com/search.naver" method="get">
+    <input type="hidden" name="where" value="nexearch">
+    <input name="query" type="search" placeholder="검색어를 입력하세요" autocomplete="off" required>
+    <button type="submit">검색</button>
+  </form>
+
+  <a class="open" href="https://m.naver.com">네이버 열기</a>
+
+  <div class="grid">
+    <a href="https://m.news.naver.com"><span>📰</span>뉴스</a>
+    <a href="https://m.comic.naver.com"><span>📚</span>웹툰</a>
+    <a href="https://m.map.naver.com"><span>🗺️</span>지도</a>
+    <a href="https://m.mail.naver.com"><span>✉️</span>메일</a>
+    <a href="https://m.shopping.naver.com"><span>🛍️</span>쇼핑</a>
+    <a href="https://m.blog.naver.com"><span>📝</span>블로그</a>
+    <a href="https://m.cafe.naver.com"><span>☕</span>카페</a>
+    <a href="https://papago.naver.com"><span>🌐</span>파파고</a>
+  </div>
+
+  <label class="auto">
+    <input type="checkbox" id="auto"> 앱을 켜면 바로 네이버 열기
+  </label>
+</main>
+<script>
+  const box = document.getElementById('auto');
+  let auto = false;
+  try { auto = localStorage.getItem('autoOpen') === '1'; } catch (e) {}
+  box.checked = auto;
+  box.addEventListener('change', () => {
+    try { localStorage.setItem('autoOpen', box.checked ? '1' : '0'); } catch (e) {}
+  });
+  // 한 번 실행할 때 한 번만 이동 (뒤로 가기로 돌아오면 설정을 바꿀 수 있도록)
+  let opened = false;
+  try { opened = sessionStorage.getItem('opened') === '1'; sessionStorage.setItem('opened', '1'); } catch (e) {}
+  if (auto && !opened) location.href = 'https://m.naver.com';
+
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
