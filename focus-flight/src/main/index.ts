@@ -5,6 +5,7 @@ import { isActive, remainingMs, type Phase } from '../shared/flightMachine'
 import { IPC } from '../shared/ipc'
 import { isNewerVersion } from '../shared/version'
 import { ExtensionBridge } from './extensionBridge'
+import { stopOlderInstances } from './legacyInstances'
 import { runSmokeTest } from './smokeTest'
 import { JsonFileStorage } from './storage'
 import { getActiveWindow } from './windowWatcher'
@@ -241,7 +242,16 @@ const launchInfo: LaunchInfo = {
 }
 
 if (!app.requestSingleInstanceLock(launchInfo)) {
-  app.quit()
+  // 이미 다른 Focus Flight가 켜져 있다. 그것이 예전 버전이면 종료시키고 이 버전을 다시 띄운다.
+  // (0.1.3 이상은 second-instance 이벤트로 스스로 물러나지만, 그 이전 버전은 그 기능이 없다)
+  void stopOlderInstances(app.getVersion())
+    .catch(() => false)
+    .then((stopped) => {
+      if (stopped) {
+        app.relaunch({ execPath: launchInfo.exe, args: launchInfo.args })
+      }
+      app.exit(0)
+    })
 } else {
   app.on('second-instance', (_e, _argv, _cwd, data) => {
     const other = data as Partial<LaunchInfo> | undefined

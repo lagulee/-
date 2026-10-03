@@ -2,6 +2,7 @@ import { app, type BrowserWindow } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import type { FlightController } from '../shared/controller'
+import { otherInstances } from './legacyInstances'
 import { getActiveWindow, lastWatcherError } from './windowWatcher'
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -32,6 +33,15 @@ export async function runSmokeTest(outDir: string, win: BrowserWindow, controlle
     await wait(300)
   }
 
+  // 이전 버전 찾기(PowerShell)가 이 PC에서 동작하는지 확인 (자기 자신은 목록에서 빠져야 한다)
+  let instances: unknown
+  let instancesError: string | null = null
+  try {
+    instances = await otherInstances()
+  } catch (err) {
+    instancesError = err instanceof Error ? err.message : String(err)
+  }
+
   // 1분짜리 비행으로 3D 화면(이륙·상승)을 확인
   controller.updateSettings({ config: { ...controller.settings.config, minFocusMinutes: 1, maxFocusMinutes: 1 } })
   const boarded = controller.board('ICN', 'NRT')
@@ -60,6 +70,8 @@ export async function runSmokeTest(outDir: string, win: BrowserWindow, controlle
     platform: `${process.platform}-${process.arch}`,
     activeWindowSamples: samples,
     activeWindowDetected: detected,
+    otherInstances: instances,
+    otherInstancesError: instancesError,
     boarded,
     phase: snap.flight.phase,
     renderer: dom,
@@ -71,6 +83,9 @@ export async function runSmokeTest(outDir: string, win: BrowserWindow, controlle
     boarded &&
     dom.cockpitCanvas === true &&
     rendererErrors.length === 0 &&
+    instancesError === null &&
+    Array.isArray(instances) &&
+    instances.length === 0 &&
     // 감지 모듈이 오류를 내면 실패 (포그라운드 창이 없어서 null인 것은 허용)
     samples.every((s) => s.error === null)
   app.exit(ok ? 0 : 1)

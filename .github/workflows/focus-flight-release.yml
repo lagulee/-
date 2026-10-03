@@ -47,6 +47,24 @@ jobs:
           if ($p.ExitCode -ne 0) { throw "실행 테스트 실패 (exit $($p.ExitCode))" }
           Copy-Item (Join-Path $dir 'screenshot.png') 'dist/Windows-test-screenshot.png'
 
+      - name: 예전 버전(0.1.1)이 켜져 있을 때 교체되는지 테스트
+        shell: pwsh
+        run: |
+          Invoke-WebRequest 'https://github.com/lagulee/-/releases/download/focus-flight-v0.1.1/FocusFlight-Portable.exe' -OutFile old-portable.exe
+          Start-Process (Resolve-Path old-portable.exe).Path
+          Start-Sleep -Seconds 25
+          $before = @(Get-Process -Name 'Focus Flight' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path -Unique)
+          "실행 중 (새 버전 실행 전): $($before -join ', ')"
+          if ($before.Count -eq 0) { throw '0.1.1이 실행되지 않았습니다' }
+          $new = (Resolve-Path 'dist/win-unpacked/Focus Flight.exe').Path
+          Start-Process $new
+          Start-Sleep -Seconds 25
+          $after = @(Get-Process -Name 'Focus Flight' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path -Unique)
+          "실행 중 (새 버전 실행 후): $($after -join ', ')"
+          Get-Process -Name 'Focus Flight' -ErrorAction SilentlyContinue | Stop-Process -Force
+          Get-Process -Name 'old-portable' -ErrorAction SilentlyContinue | Stop-Process -Force
+          if ($after.Count -eq 1 -and $after[0] -eq $new) { '교체 성공' } else { throw '예전 버전이 남아 있거나 새 버전이 실행되지 않았습니다' }
+
       - name: 실행 테스트 결과 보관
         if: always()
         uses: actions/upload-artifact@v4
