@@ -26,3 +26,9 @@
 - 생명 3개, 모두 잃으면 게임 오버
 - 레벨이 오를수록 공 속도 증가
 - 최고 점수는 브라우저에 저장됨
+
+---
+
+## ✈️ Focus Flight
+
+비행 콘셉트의 Windows 집중 타이머(Electron + React)는 [`focus-flight/`](focus-flight/README.md) 폴더에 있습니다.

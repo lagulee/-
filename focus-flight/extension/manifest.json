@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "Focus Flight 연결",
+  "version": "0.1.0",
+  "description": "현재 탭 주소를 Focus Flight 데스크탑 앱(127.0.0.1)에 알려 지정한 플레이리스트만 허용합니다.",
+  "permissions": ["tabs", "alarms"],
+  "background": { "service_worker": "background.js" },
+  "icons": { "128": "icon128.png" }
+}
