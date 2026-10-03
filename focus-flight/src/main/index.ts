@@ -5,6 +5,7 @@ import { isActive, remainingMs, type Phase } from '../shared/flightMachine'
 import { IPC } from '../shared/ipc'
 import { isNewerVersion } from '../shared/version'
 import { ExtensionBridge } from './extensionBridge'
+import { runSmokeTest } from './smokeTest'
 import { JsonFileStorage } from './storage'
 import { getActiveWindow } from './windowWatcher'
 
@@ -22,6 +23,11 @@ let mainWindow: BrowserWindow | null = null
 let overlay: BrowserWindow | null = null
 let tray: Tray | null = null
 let quitting = false
+
+/** --smoke-test=<폴더>: 실행 테스트 모드 (실제 기록을 건드리지 않도록 임시 폴더 사용) */
+const smokeArg = process.argv.find((a) => a.startsWith('--smoke-test='))
+const smokeDir = smokeArg ? path.resolve(smokeArg.slice('--smoke-test='.length)) : null
+if (smokeDir) app.setPath('userData', path.join(smokeDir, 'userData'))
 
 const controller = new FlightController(
   new JsonFileStorage(path.join(app.getPath('userData'), 'focus-flight.json'))
@@ -258,6 +264,7 @@ if (!app.requestSingleInstanceLock(launchInfo)) {
     createTray()
     bridge.start()
     restartPolling()
+    if (smokeDir && mainWindow) void runSmokeTest(smokeDir, mainWindow, controller)
   })
 
   app.on('before-quit', () => {

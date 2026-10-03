@@ -37,6 +37,23 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
+      - name: Windows 실행 테스트 (창 감지·3D 화면)
+        shell: pwsh
+        run: |
+          $dir = Join-Path $PWD 'smoke'
+          $p = Start-Process -FilePath 'dist/win-unpacked/Focus Flight.exe' -ArgumentList "--smoke-test=$dir" -PassThru
+          if (-not $p.WaitForExit(120000)) { $p.Kill(); throw '실행 테스트 시간 초과' }
+          Get-Content (Join-Path $dir 'report.json')
+          if ($p.ExitCode -ne 0) { throw "실행 테스트 실패 (exit $($p.ExitCode))" }
+          Copy-Item (Join-Path $dir 'screenshot.png') 'dist/Windows-test-screenshot.png'
+
+      - name: 실행 테스트 결과 보관
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test
+          path: focus-flight/smoke/*.*
+
       - name: 브라우저 확장 압축
         shell: pwsh
         run: Compress-Archive -Path extension/* -DestinationPath dist/FocusFlight-Extension.zip
@@ -65,3 +82,4 @@ jobs:
           files: |
             focus-flight/dist/*.exe
             focus-flight/dist/*.zip
+            focus-flight/dist/Windows-test-screenshot.png
