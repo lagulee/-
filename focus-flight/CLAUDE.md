@@ -21,6 +21,8 @@ Windows용 집중 타이머. 비행 콘셉트(목적지 → 탑승 → 비행 �
 - `src/main/` — Electron Main: 1초 폴링, 트레이, 난기류 오버레이, 확장 WebSocket(127.0.0.1:47321)
 - `src/preload/` — `window.focusFlight` API 노출 (contextIsolation)
 - `src/renderer/` — React UI. `window.focusFlight`가 없으면 mock(`api.ts`)으로 동작
+  - `three/` 3D 비행 화면 (three.js). 지구 R=1000 단위, 고도는 시각적으로 과장. 지형은 전체 텍스처 + 비행기 주변 조각 2단계
+  - `flightMotion.ts` 이륙(활주·기수 들기)·상승·하강 연출 값 (순수 함수, 테스트 있음)
 - `extension/` — Chromium(Chrome/Edge/Whale) MV3 확장. 현재 탭 URL을 앱에 전달
 
 ## 상태 기계

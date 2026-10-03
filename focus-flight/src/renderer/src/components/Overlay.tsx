@@ -11,6 +11,11 @@ export default function Overlay() {
       <div>
         {Math.max(0, left)}초 안에 허용된 앱으로 돌아오지 않으면 <b>추락</b>합니다
       </div>
+      {snap.activeWindow && (
+        <div className="overlay-sub">
+          지금 창: {snap.activeWindow.processName} — {snap.activeWindow.reason}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  explainWindow,
   hostMatches,
+  siteTitleKeyword,
   judgeUrl,
   judgeWindow,
   parsePlaylistInput,
@@ -54,6 +56,25 @@ describe('judgeWindow', () => {
     expect(judgeWindow({ processName: 'consent.exe', title: '사용자 계정 컨트롤' }, list)).toBe('neutral')
   })
 
+  it('Focus Flight 자기 창은 허용 (난기류 중 앱을 눌러 확인해도 회복)', () => {
+    expect(judgeWindow({ processName: 'Focus Flight.exe', title: 'Focus Flight' }, list)).toBe('allowed')
+    expect(judgeWindow({ processName: 'electron.exe', title: 'Focus Flight' }, list)).toBe('allowed')
+  })
+
+  it('실행 파일 경로를 못 읽어도 앱 이름으로 허용 (code.exe ↔ Code)', () => {
+    expect(judgeWindow({ processName: 'Code.exe', appName: 'Code', title: 'x' }, list)).toBe('allowed')
+    expect(judgeWindow({ processName: 'Visual Studio Code.exe', appName: 'Code', title: 'x' }, list)).toBe('allowed')
+  })
+
+  it('확장이 없어도 창 제목의 사이트 이름으로 허용 사이트를 짐작한다', () => {
+    expect(judgeWindow({ processName: 'chrome.exe', title: '회의록 - Notion - Chrome' }, list)).toBe('allowed')
+    expect(judgeWindow({ processName: 'chrome.exe', title: '웃긴 영상 - YouTube - Chrome' }, list)).toBe('blocked')
+  })
+
+  it('판정 이유를 알려 준다', () => {
+    expect(explainWindow({ processName: 'chrome.exe', title: 'YouTube' }, list).reason).toContain('확장')
+  })
+
   it('목록에 없는 앱은 차단', () => {
     expect(judgeWindow({ processName: 'Discord.exe', title: 'Discord' }, list)).toBe('blocked')
   })
@@ -80,5 +101,14 @@ describe('parsePlaylistInput', () => {
     expect(parsePlaylistInput('PLabcdefghij')).toBe('PLabcdefghij')
     expect(parsePlaylistInput('https://www.youtube.com/watch?v=x')).toBeNull()
     expect(parsePlaylistInput('  ')).toBeNull()
+  })
+})
+
+describe('siteTitleKeyword', () => {
+  it('도메인에서 제목에 나올 법한 이름을 뽑는다', () => {
+    expect(siteTitleKeyword('notion.so')).toBe('notion')
+    expect(siteTitleKeyword('www.github.com')).toBe('github')
+    expect(siteTitleKeyword('docs.google.com')).toBe('docs')
+    expect(siteTitleKeyword('x.ai')).toBeNull()
   })
 })

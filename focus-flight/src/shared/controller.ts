@@ -1,4 +1,4 @@
-import { DEFAULT_ALLOWLIST, judgeWindow, type AllowList, type Verdict, type WindowInfo } from './allowlist'
+import { DEFAULT_ALLOWLIST, explainWindow, type AllowList, type Verdict, type WindowInfo } from './allowlist'
 import { findCity } from './cities'
 import { DEFAULT_CONFIG, type FlightConfig } from './config'
 import {
@@ -41,7 +41,7 @@ export interface Snapshot {
   stats: Stats
   lastRecord: FlightRecord | null
   recentRecords: FlightRecord[]
-  activeWindow: (WindowInfo & { verdict: Verdict }) | null
+  activeWindow: (WindowInfo & { verdict: Verdict; reason: string }) | null
   extensionConnected: boolean
 }
 
@@ -160,8 +160,8 @@ export class FlightController {
 
   /** 활성 창 감시 결과를 반영한다. neutral 이면 포커스 상태를 바꾸지 않는다. */
   observeWindow(w: WindowInfo | null): Verdict {
-    const verdict = judgeWindow(w, this.data.settings.allowlist)
-    this.activeWindow = w ? { ...w, verdict } : null
+    const { verdict, reason } = explainWindow(w, this.data.settings.allowlist)
+    this.activeWindow = w ? { ...w, verdict, reason } : null
     if (verdict !== 'neutral') {
       this.dispatch({ type: 'FOCUS', allowed: verdict === 'allowed', now: this.clock() })
     } else {

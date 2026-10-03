@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { isMock, MOCK_WINDOWS, setMockWindow } from './api'
 import FlightView from './components/FlightView'
 import Passport from './components/Passport'
 import SettingsView from './components/SettingsView'
+import { prewarmGlobe } from './three/earthTexture'
 import { useSnapshot } from './useSnapshot'
 
 type Tab = 'flight' | 'passport' | 'settings'
@@ -16,6 +17,8 @@ const TABS: { id: Tab; label: string }[] = [
 export default function App() {
   const snap = useSnapshot()
   const [tab, setTab] = useState<Tab>('flight')
+  // 3D 지구 텍스처를 한가할 때 미리 그려 이륙 순간 끊기지 않게 한다
+  useEffect(() => prewarmGlobe(), [])
   if (!snap) return <div className="loading">관제탑 연결 중…</div>
 
   return (

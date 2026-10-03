@@ -1,4 +1,4 @@
-import { geoGraticule10, geoNaturalEarth1, geoPath } from 'd3-geo'
+import { geoGraticule10, geoNaturalEarth1, geoPath, type GeoProjection } from 'd3-geo'
 import { useMemo } from 'react'
 import { feature } from 'topojson-client'
 import type { Topology } from 'topojson-specification'
@@ -9,7 +9,10 @@ import { greatCirclePath, slerp, type LatLon } from '../../../shared/geo'
 const W = 960
 const H = 500
 
-const projection = geoNaturalEarth1()
+const topo = land110m as unknown as Topology
+const land = feature(topo, topo.objects.land)
+
+const worldProjection = geoNaturalEarth1()
   .rotate([-150, 0]) // 태평양 중심 지도: 한국과 미국 서부가 함께 보인다
   .fitExtent(
     [
@@ -18,11 +21,34 @@ const projection = geoNaturalEarth1()
     ],
     { type: 'Sphere' }
   )
-const path = geoPath(projection)
-const topo = land110m as unknown as Topology
-const landPath = path(feature(topo, topo.objects.land)) ?? ''
-const gratPath = path(geoGraticule10()) ?? ''
-const spherePath = path({ type: 'Sphere' }) ?? ''
+
+function makeLayers(projection: GeoProjection) {
+  const path = geoPath(projection)
+  return {
+    projection,
+    path,
+    land: path(land) ?? '',
+    grat: path(geoGraticule10()) ?? '',
+    sphere: path({ type: 'Sphere' }) ?? ''
+  }
+}
+
+const worldLayers = makeLayers(worldProjection)
+
+/** 노선이 화면을 채우도록 확대한 투영 (최소 30° 범위는 보이게) */
+function routeProjection(a: LatLon, b: LatLon): GeoProjection {
+  const mid = slerp(a, b, 0.5)
+  const pts = [...greatCirclePath(a, b, 32), ...[-1, 1].flatMap((dx) => [-1, 1].map((dy) => ({ lat: mid.lat + dy * 8, lon: mid.lon + dx * 15 })))]
+  return geoNaturalEarth1()
+    .rotate([-mid.lon, 0])
+    .fitExtent(
+      [
+        [20, 20],
+        [W - 20, H - 20]
+      ],
+      { type: 'MultiPoint', coordinates: pts.map((p) => [p.lon, p.lat]) }
+    )
+}
 
 const lineString = (pts: LatLon[]) => ({
   type: 'LineString' as const,
@@ -38,24 +64,31 @@ interface Props {
   stamps?: Record<string, number>
   shaking?: boolean
   onPickCity?: (code: string) => void
+  /** true면 세계 지도 대신 노선 주변을 확대 */
+  zoom?: boolean
 }
 
-export default function FlightMap({ from, to, progress, plane, stamps = {}, shaking, onPickCity }: Props) {
+export default function FlightMap({ from, to, progress, plane, stamps = {}, shaking, onPickCity, zoom }: Props) {
   const a = from ? findCity(from) : undefined
   const b = to ? findCity(to) : undefined
+  const layers = useMemo(
+    () => (zoom && a && b && a.code !== b.code ? makeLayers(routeProjection(a, b)) : worldLayers),
+    [zoom, a, b]
+  )
+  const { projection, path } = layers
 
   const route = useMemo(() => {
     if (!a || !b || a.code === b.code) return null
     const pts = greatCirclePath(a, b, 128)
     return { full: path(lineString(pts)) ?? '' }
-  }, [a, b])
+  }, [a, b, path])
 
   const flown = useMemo(() => {
     if (!a || !b || progress === null || progress <= 0) return ''
     const n = Math.max(2, Math.round(128 * progress))
     const pts = Array.from({ length: n + 1 }, (_, i) => slerp(a, b, (i / n) * progress))
     return path(lineString(pts)) ?? ''
-  }, [a, b, progress])
+  }, [a, b, progress, path])
 
   const planePos = useMemo(() => {
     if (!a || !b || progress === null) return null
@@ -69,18 +102,18 @@ export default function FlightMap({ from, to, progress, plane, stamps = {}, shak
     // 이모지 ✈️ 는 오른쪽 위(-45°)를 향하므로 보정
     const angle = (Math.atan2(x2[1] - x1[1], x2[0] - x1[0]) * 180) / Math.PI + 45
     return { x: xy[0], y: xy[1], angle }
-  }, [a, b, progress])
+  }, [a, b, progress, projection])
 
   return (
     <svg className={`map ${shaking ? 'shake' : ''}`} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="비행 지도">
-      <path d={spherePath} className="map-sea" />
-      <path d={gratPath} className="map-grat" />
-      <path d={landPath} className="map-land" />
+      <path d={layers.sphere} className="map-sea" />
+      <path d={layers.grat} className="map-grat" />
+      <path d={layers.land} className="map-land" />
       {route && <path d={route.full} className="map-route" />}
       {flown && <path d={flown} className="map-flown" />}
       {CITIES.map((c) => {
         const xy = projection([c.lon, c.lat])
-        if (!xy) return null
+        if (!xy || (zoom && (xy[0] < 0 || xy[0] > W || xy[1] < 0 || xy[1] > H))) return null
         const active = c.code === from || c.code === to
         const stamped = stamps[c.code] !== undefined
         return (

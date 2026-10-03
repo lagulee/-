@@ -22,7 +22,7 @@ export async function getActiveWindow(): Promise<WindowInfo | null> {
     const win = await (await load())()
     if (!win) return null
     const exe = win.owner.path ? path.win32.basename(win.owner.path) : `${win.owner.name}.exe`
-    return { processName: exe, title: win.title ?? '' }
+    return { processName: exe, appName: win.owner.name, title: win.title ?? '' }
   } catch {
     return null
   }

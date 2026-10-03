@@ -706,6 +706,12 @@ label.row select {
   text-align: center;
 }
 
+.overlay-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
 .overlay-title {
   font-size: 20px;
   font-weight: 700;
@@ -718,4 +724,271 @@ label.row select {
   .tiles {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* ---------- 3D 비행 화면 ---------- */
+.cockpit {
+  position: relative;
+  height: calc(100vh - 110px);
+  min-height: 440px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0e1a30;
+  border: 1px solid var(--line);
+}
+
+.cockpit-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cockpit-map {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 50px 10px 80px;
+}
+
+.cockpit.turb .cockpit-canvas {
+  animation: shake 0.3s infinite;
+}
+
+.cockpit.turb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 120px 30px rgba(255, 60, 80, 0.45);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.hud-top {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  pointer-events: none;
+}
+
+.hud-route {
+  background: rgba(8, 14, 26, 0.6);
+  backdrop-filter: blur(6px);
+  padding: 7px 14px;
+  border-radius: 99px;
+  font-size: 13px;
+}
+
+.hud-route b {
+  font-size: 15px;
+}
+
+.hud-route span {
+  color: var(--accent-2);
+  margin: 0 4px;
+}
+
+.hud-views {
+  display: flex;
+  gap: 4px;
+  background: rgba(8, 14, 26, 0.6);
+  backdrop-filter: blur(6px);
+  padding: 4px;
+  border-radius: 99px;
+  pointer-events: auto;
+}
+
+.hud-views button {
+  border: 0;
+  background: transparent;
+  border-radius: 99px;
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.hud-views button.on {
+  background: var(--accent);
+  color: #04121f;
+  font-weight: 600;
+}
+
+.hud-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-shadow: 0 2px 10px #000a;
+  font-size: 16px;
+}
+
+.hud-big {
+  font-size: 72px;
+  font-weight: 200;
+}
+
+.hud-alert {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--danger);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 8px 30px #0008;
+  max-width: 90%;
+}
+
+.hud-alert-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.hud-alert-sub {
+  font-size: 12px;
+  opacity: 0.92;
+  margin-top: 2px;
+}
+
+.hud-bottom {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  background: rgba(8, 14, 26, 0.62);
+  backdrop-filter: blur(6px);
+  border-radius: 12px;
+  padding: 10px 14px 12px;
+  pointer-events: none;
+}
+
+.view-cockpit .hud-bottom {
+  bottom: 23%;
+}
+
+.hud-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.hud-progress {
+  position: relative;
+  height: 4px;
+  background: #ffffff22;
+  border-radius: 99px;
+}
+
+.hud-progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
+.hud-progress-plane {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -55%);
+  font-size: 14px;
+  color: var(--accent-2);
+}
+
+.minimap {
+  position: absolute;
+  right: 12px;
+  bottom: 84px;
+  width: 210px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(8, 14, 26, 0.6);
+  border: 1px solid #ffffff22;
+  pointer-events: none;
+}
+
+.view-cockpit .minimap,
+.view-window .minimap {
+  display: none;
+}
+
+/* 창가석: 둥근 비행기 창문 */
+.window-frame {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 34% 44% at 50% 48%, transparent 96%, rgba(0, 0, 0, 0.35) 98%, #d7dce3 100%);
+}
+
+.window-frame::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 68%;
+  height: 88%;
+  transform: translate(-50%, -50%);
+  border-radius: 46% / 40%;
+  box-shadow:
+    0 0 0 9999px #e3e7ec,
+    inset 0 0 40px 8px rgba(0, 0, 0, 0.35),
+    0 0 0 14px #c9cfd8;
+}
+
+/* 조종석: 아래쪽 계기판 */
+.dashboard {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22%;
+  min-height: 90px;
+  background: linear-gradient(180deg, #1a1f27, #0b0e13);
+  border-top: 3px solid #2a313c;
+  border-radius: 40% 40% 0 0 / 30% 30% 0 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  pointer-events: none;
+}
+
+.gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 110px;
+  height: 64px;
+  border-radius: 10px;
+  background: #050a10;
+  border: 1px solid #2c3644;
+  box-shadow: inset 0 0 14px #3ddc9733;
+  color: #3ddc97;
+  font-family: Consolas, monospace;
+}
+
+.gauge b {
+  font-size: 20px;
+}
+
+.gauge small {
+  font-size: 10px;
+  opacity: 0.7;
 }

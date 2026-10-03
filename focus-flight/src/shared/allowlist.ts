@@ -27,6 +27,8 @@ export const DEFAULT_ALLOWLIST: AllowList = {
 export interface WindowInfo {
   /** 실행 파일 이름 (예: chrome.exe) */
   processName: string
+  /** 앱 표시 이름 (예: Visual Studio Code). 실행 파일 경로를 못 읽을 때 대신 비교한다 */
+  appName?: string
   title: string
   /** 브라우저 확장이 알려준 현재 탭 URL (없으면 undefined) */
   url?: string
@@ -56,11 +58,11 @@ export const SYSTEM_PROCESSES = [
   'lockapp.exe',
   'consent.exe', // UAC
   'credentialuibroker.exe',
-  'applicationframehost.exe',
-  'focus flight.exe',
-  'focus-flight.exe',
-  'electron.exe'
+  'applicationframehost.exe'
 ]
+
+/** Focus Flight 자기 자신. 타이머를 확인하는 것은 이탈이 아니므로 허용으로 본다 */
+export const OWN_PROCESSES = ['focus flight.exe', 'focus-flight.exe', 'electron.exe']
 
 const norm = (s: string): string => s.trim().toLowerCase()
 
@@ -88,18 +90,51 @@ export function judgeUrl(rawUrl: string, list: AllowList): boolean {
   return pid !== null && list.playlists.some((p) => p.trim() === pid)
 }
 
-export function judgeWindow(w: WindowInfo | null, list: AllowList): Verdict {
-  if (!w) return 'neutral'
+/** 확장 없이 창 제목으로 사이트를 짐작할 때 쓰는 이름 (notion.so → notion, docs.google.com → docs) */
+export function siteTitleKeyword(site: string): string | null {
+  const labels = norm(site).replace(/^https?:\/\//, '').split('/')[0].split('.')
+  const name = labels.filter((l) => l !== 'www' && l !== '')[0]
+  return name && name.length >= 4 && labels.length >= 2 ? name : null
+}
+
+export interface Judgement {
+  verdict: Verdict
+  /** 화면에 보여 줄 판정 이유 */
+  reason: string
+}
+
+export function explainWindow(w: WindowInfo | null, list: AllowList): Judgement {
+  if (!w) return { verdict: 'neutral', reason: '창을 감지하지 못함' }
   const proc = norm(w.processName)
-  if (SYSTEM_PROCESSES.includes(proc)) return 'neutral'
-  if (list.apps.some((a) => norm(a) === proc)) return 'allowed'
-  const title = norm(w.title)
-  const titleHit = list.titleKeywords.some((k) => norm(k) !== '' && title.includes(norm(k)))
-  if (BROWSERS.includes(proc)) {
-    if (w.url) return judgeUrl(w.url, list) ? 'allowed' : 'blocked'
-    return titleHit ? 'allowed' : 'blocked'
+  const app = norm(w.appName ?? '')
+  if (OWN_PROCESSES.includes(proc)) return { verdict: 'allowed', reason: 'Focus Flight' }
+  if (SYSTEM_PROCESSES.includes(proc)) return { verdict: 'neutral', reason: '시스템 창' }
+  if (list.apps.some((a) => norm(a) === proc || (app !== '' && norm(a).replace(/\.exe$/, '') === app))) {
+    return { verdict: 'allowed', reason: '허용 앱' }
   }
-  return titleHit ? 'allowed' : 'blocked'
+  const title = norm(w.title)
+  const keyword = list.titleKeywords.find((k) => norm(k) !== '' && title.includes(norm(k)))
+  if (BROWSERS.includes(proc)) {
+    if (w.url) {
+      return judgeUrl(w.url, list)
+        ? { verdict: 'allowed', reason: '허용 사이트/플레이리스트' }
+        : { verdict: 'blocked', reason: '허용 목록에 없는 사이트' }
+    }
+    if (keyword) return { verdict: 'allowed', reason: `제목에 "${keyword}" 포함` }
+    // 확장이 없으면 URL을 모르므로 창 제목에 사이트 이름이 있는지로 짐작한다
+    const site = list.sites.find((st) => {
+      const k = siteTitleKeyword(st)
+      return k !== null && title.includes(k)
+    })
+    if (site) return { verdict: 'allowed', reason: `제목으로 ${site} 추정 (확장 설치 시 정확)` }
+    return { verdict: 'blocked', reason: '허용 사이트로 확인되지 않음 (브라우저 확장을 설치하면 정확해요)' }
+  }
+  if (keyword) return { verdict: 'allowed', reason: `제목에 "${keyword}" 포함` }
+  return { verdict: 'blocked', reason: '허용 목록에 없는 앱' }
+}
+
+export function judgeWindow(w: WindowInfo | null, list: AllowList): Verdict {
+  return explainWindow(w, list).verdict
 }
 
 /** 사용자가 붙여 넣은 YouTube 플레이리스트 링크나 ID에서 ID만 뽑는다 */

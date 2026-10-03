@@ -5,6 +5,7 @@ import { progress, remainingMs } from '../../../shared/flightMachine'
 import { AIRCRAFT, milesFor } from '../../../shared/rewards'
 import { api } from '../api'
 import { formatClock } from '../useSnapshot'
+import CockpitView from './CockpitView'
 import FlightMap from './FlightMap'
 
 const PHASE_TEXT = {
@@ -80,29 +81,13 @@ export default function FlightView({ snap }: { snap: Snapshot }) {
 
   const p = progress(flight)
   const route = flight.route!
-  const turbulenceLeft =
-    flight.phase === 'turbulence' ? flight.phaseSince + settings.config.graceMs - snap.now : 0
   const boardingLeft = flight.phase === 'boarding' ? flight.phaseSince + settings.config.boardingMs - snap.now : 0
   const pausesLeft = settings.config.maxPauses - flight.pausesUsed
   const done = flight.phase === 'landed' || flight.phase === 'crashed'
 
   return (
     <div className="flight-layout">
-      <div className="map-wrap">
-        <FlightMap
-          from={route.from}
-          to={route.to}
-          progress={flight.phase === 'boarding' ? 0 : p}
-          plane={flight.phase === 'crashed' ? '💥' : plane}
-          stamps={snap.stats.stamps}
-          shaking={flight.phase === 'turbulence'}
-        />
-        {flight.phase === 'turbulence' && (
-          <div className="banner danger">
-            ⚠️ 난기류! {Math.ceil(turbulenceLeft / 1000)}초 안에 돌아오지 않으면 추락합니다
-          </div>
-        )}
-      </div>
+      <CockpitView snap={snap} plane={plane} />
       <aside className={`panel phase-${flight.phase}`}>
         <div className="route-title">
           {route.from} <span>✈</span> {route.to}
@@ -232,6 +217,7 @@ function WindowStatus({ snap }: { snap: Snapshot }) {
         )}
       </div>
       {w?.title && <div className="muted small ellipsis">{w.title}</div>}
+      {w && <div className="muted small">판정: {w.reason}</div>}
       <div className="muted small">
         브라우저 확장: {snap.extensionConnected ? '연결됨 (URL로 판정)' : '미연결 (창 제목으로 근사)'}
       </div>
