@@ -1,0 +1,65 @@
+name: Focus Flight Windows 빌드
+
+on:
+  push:
+    paths:
+      - 'focus-flight/**'
+      - '.github/workflows/focus-flight-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: focus-flight
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: focus-flight/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      - name: 설치 파일·포터블 exe 만들기
+        run: npx electron-builder --win --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: 브라우저 확장 압축
+        shell: pwsh
+        run: Compress-Archive -Path extension/* -DestinationPath dist/FocusFlight-Extension.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: focus-flight-windows
+          path: |
+            focus-flight/dist/*.exe
+            focus-flight/dist/*.zip
+
+      - name: 릴리스에 올리기
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: focus-flight-v0.1.${{ github.run_number }}
+          name: Focus Flight 0.1.${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          body: |
+            ## 실행 방법
+            - **FocusFlight-Portable.exe** — 내려받아 더블클릭하면 바로 실행 (설치 없음)
+            - **FocusFlight-Setup.exe** — 시작 메뉴에 등록되는 일반 설치 버전
+            - **FocusFlight-Extension.zip** — (선택) 플레이리스트만 허용하는 브라우저 확장
+
+            처음 실행할 때 "Windows의 PC 보호" 창이 뜨면 **추가 정보 → 실행**을 누르세요.
+          files: |
+            focus-flight/dist/*.exe
+            focus-flight/dist/*.zip

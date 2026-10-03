@@ -177,7 +177,12 @@ async function poll(): Promise<void> {
 
 function applyLoginItem(settings: Settings): void {
   if (process.platform === 'win32' || process.platform === 'darwin') {
-    app.setLoginItemSettings({ openAtLogin: settings.launchAtLogin, args: ['--hidden'] })
+    app.setLoginItemSettings({
+      openAtLogin: settings.launchAtLogin,
+      args: ['--hidden'],
+      // 포터블 exe는 임시 폴더에 풀려 실행되므로 원래 exe 경로를 등록한다
+      path: process.env.PORTABLE_EXECUTABLE_FILE ?? process.execPath
+    })
   }
 }
 

@@ -48,11 +48,15 @@
       "buildResources": "resources"
     },
     "files": [
-      "out/main/**",
-      "out/preload/**",
-      "out/renderer/**",
-      "resources/**",
-      "package.json"
+      "**/*",
+      "!src/**",
+      "!tests/**",
+      "!extension/**",
+      "!*.config.ts",
+      "!tsconfig.json",
+      "!CLAUDE.md",
+      "!README.md",
+      "!out/web/**"
     ],
     "asarUnpack": [
       "node_modules/get-windows/**"
@@ -64,6 +68,12 @@
           "arch": [
             "x64"
           ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "resources/icon.png"
@@ -71,7 +81,12 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "shortcutName": "Focus Flight"
+      "shortcutName": "Focus Flight",
+      "artifactName": "FocusFlight-Setup.${ext}"
+    },
+    "npmRebuild": false,
+    "portable": {
+      "artifactName": "FocusFlight-Portable.${ext}"
     }
   }
 }
