@@ -3,6 +3,7 @@ import { findCity } from '../../../shared/cities'
 import type { Snapshot } from '../../../shared/controller'
 import { flightMotion, instruments, type Motion } from '../flightMotion'
 import { FlightScene, type CameraMode } from '../three/FlightScene'
+import CabinWindow from './CabinWindow'
 import FlightMap from './FlightMap'
 
 type View = CameraMode | 'map'
@@ -149,7 +150,7 @@ export default function CockpitView({ snap, plane }: { snap: Snapshot; plane: st
         <canvas ref={canvasRef} className="cockpit-canvas" />
       )}
 
-      {view === 'window' && !showMap && <div className="window-frame" />}
+      {view === 'window' && !showMap && <CabinWindow />}
       {view === 'cockpit' && !showMap && (
         <div className="dashboard">
           <div className="gauge">

@@ -459,7 +459,7 @@ export class FlightScene {
       this.camera.fov = 70
     } else if (this.mode === 'window') {
       desired = local(this.windowSeat)
-      target = local(new THREE.Vector3(1.4, -0.42, 0.24))
+      target = local(new THREE.Vector3(1.3, -0.38, 0.42))
       camUp = up.clone().applyAxisAngle(forward, -roll)
       this.camera.fov = 62
     } else {

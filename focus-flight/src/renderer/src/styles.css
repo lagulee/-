@@ -934,27 +934,159 @@ label.row select {
   display: none;
 }
 
-/* 창가석: 둥근 비행기 창문 */
-.window-frame {
+/* 창가석: 기내 창문 */
+.cockpit {
+  container-type: size;
+}
+
+.cabin {
+  --wh: min(70cqh, 62cqw * 1.42);
+  --ww: calc(var(--wh) / 1.42);
+  --frame: calc(var(--ww) * 0.12);
+  /* 바깥 테두리 모서리 반지름 (마스크 SVG의 rx 44/100, ry 46/142와 같은 비율) */
+  --rx: calc((var(--ww) + var(--frame) * 2) * 0.44);
+  --ry: calc((var(--wh) + var(--frame) * 2) * 0.324);
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse 34% 44% at 50% 48%, transparent 96%, rgba(0, 0, 0, 0.35) 98%, #d7dce3 100%);
 }
 
-.window-frame::before {
-  content: '';
+/* 창 모양(둥근 사각형) 마스크. 100:142 비율 */
+.cabin-wall,
+.cabin-light {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(#000 0 0),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 142'%3E%3Crect width='100' height='142' rx='44' ry='46'/%3E%3C/svg%3E");
+  mask-image: linear-gradient(#000 0 0),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 142'%3E%3Crect width='100' height='142' rx='44' ry='46'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%, calc(var(--ww) + var(--frame) * 2) calc(var(--wh) + var(--frame) * 2);
+  mask-size: 100% 100%, calc(var(--ww) + var(--frame) * 2) calc(var(--wh) + var(--frame) * 2);
+  -webkit-mask-position: 0 0, 50% 50%;
+  mask-position: 0 0, 50% 50%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* 기내 벽: 따뜻한 흰색 패널, 이음새, 미세한 질감 */
+.cabin-wall {
+  background:
+    linear-gradient(90deg, transparent calc(14% - 1px), rgba(90, 80, 70, 0.25) 14%, rgba(255, 255, 255, 0.6) calc(14% + 1px), transparent calc(14% + 2px)),
+    linear-gradient(90deg, transparent calc(86% - 1px), rgba(90, 80, 70, 0.25) 86%, rgba(255, 255, 255, 0.6) calc(86% + 1px), transparent calc(86% + 2px)),
+    linear-gradient(180deg, transparent 88%, rgba(70, 60, 50, 0.18) 88.3%, rgba(255, 255, 255, 0.5) 88.6%, transparent 89%),
+    repeating-linear-gradient(115deg, rgba(0, 0, 0, 0.012) 0 2px, rgba(255, 255, 255, 0.015) 2px 4px),
+    radial-gradient(ellipse 70% 60% at 50% 40%, #f6f2ea, #e4ddd1 60%, #cfc6b8);
+}
+
+/* 위쪽 조명과 아래쪽 그늘 */
+.cabin-light {
+  background:
+    linear-gradient(180deg, rgba(255, 246, 225, 0.55), transparent 22%, transparent 70%, rgba(40, 30, 20, 0.22)),
+    radial-gradient(ellipse 30% 8% at 50% 0%, rgba(255, 240, 200, 0.6), transparent);
+}
+
+/* 창 둘레 플라스틱 테두리: 바깥은 밝고 안쪽으로 갈수록 깊어진다 */
+.win-bezel {
   position: absolute;
   left: 50%;
-  top: 48%;
-  width: 68%;
-  height: 88%;
+  top: 50%;
+  width: calc(var(--ww) + var(--frame) * 2);
+  height: calc(var(--wh) + var(--frame) * 2);
   transform: translate(-50%, -50%);
-  border-radius: 46% / 40%;
+  border-radius: var(--rx) / var(--ry);
+  border: var(--frame) solid transparent;
+  background:
+    linear-gradient(160deg, #fbf9f5, #e7e1d6 45%, #c9c0b2) border-box;
+  -webkit-mask: linear-gradient(#000 0 0) padding-box exclude, linear-gradient(#000 0 0) border-box;
+  mask: linear-gradient(#000 0 0) padding-box exclude, linear-gradient(#000 0 0) border-box;
   box-shadow:
-    0 0 0 9999px #e3e7ec,
-    inset 0 0 40px 8px rgba(0, 0, 0, 0.35),
-    0 0 0 14px #c9cfd8;
+    inset 0 0 0 1px rgba(255, 255, 255, 0.8),
+    0 calc(var(--frame) * 0.15) calc(var(--frame) * 0.5) rgba(60, 45, 30, 0.35);
+}
+
+.win-pane {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--ww);
+  height: var(--wh);
+  transform: translate(-50%, -50%);
+  /* 테두리 안쪽 곡선과 정확히 맞춘다 */
+  border-radius: calc(var(--rx) - var(--frame)) / calc(var(--ry) - var(--frame));
+  overflow: hidden;
+  /* 안쪽 창틀의 깊이감 */
+  box-shadow:
+    inset 0 0 0 calc(var(--ww) * 0.035) #d8d1c5,
+    inset 0 0 0 calc(var(--ww) * 0.04) #a79d8e,
+    inset 0 calc(var(--ww) * 0.05) calc(var(--ww) * 0.09) rgba(40, 30, 20, 0.55),
+    inset 0 0 calc(var(--ww) * 0.12) rgba(20, 30, 50, 0.45);
+}
+
+/* 유리: 살짝 푸른 기와 대각선 반사광 */
+.win-glass {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(118deg, transparent 22%, rgba(255, 255, 255, 0.16) 28%, rgba(255, 255, 255, 0.04) 34%, transparent 36%),
+    linear-gradient(118deg, transparent 40%, rgba(255, 255, 255, 0.08) 43%, transparent 46%),
+    radial-gradient(ellipse 60% 40% at 25% 15%, rgba(255, 255, 255, 0.14), transparent 70%),
+    linear-gradient(180deg, rgba(190, 220, 255, 0.06), rgba(120, 160, 210, 0.08));
+}
+
+/* 창 아래쪽 작은 숨구멍 */
+.win-breather {
+  position: absolute;
+  left: 50%;
+  bottom: 9%;
+  width: calc(var(--ww) * 0.025);
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, rgba(255, 255, 255, 0.5), rgba(30, 40, 55, 0.6) 60%);
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+}
+
+/* 블라인드: 플라스틱 결과 손잡이 */
+.win-shade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  min-height: calc(var(--ww) * 0.06);
+  background:
+    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0 6px, rgba(0, 0, 0, 0.035) 6px 7px),
+    linear-gradient(90deg, #ddd6ca, #f4f0e8 30%, #f4f0e8 70%, #d6cfc2);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  transition: height 0.08s linear;
+}
+
+.win-shade-lip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--ww) * 0.07);
+  min-height: 16px;
+  background: linear-gradient(180deg, #ece6db, #cfc6b7 60%, #b9af9f);
+  border-top: 1px solid rgba(255, 255, 255, 0.7);
+  cursor: ns-resize;
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+}
+
+.win-shade-lip span {
+  width: 28%;
+  height: 34%;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #a59a89, #8b8070);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.view-window .hud-top .hud-route {
+  background: rgba(60, 50, 40, 0.55);
 }
 
 /* 조종석: 아래쪽 계기판 */
