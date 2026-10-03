@@ -51,7 +51,7 @@ describe('slerp', () => {
 })
 
 describe('focusMinutes', () => {
-  const opts = { timeScale: 0.5, cruiseSpeedKmh: 850, minFocusMinutes: 10, maxFocusMinutes: 180 }
+  const opts = { timeScale: 0.5, cruiseSpeedKmh: 850, minFocusMinutes: 10, maxFocusMinutes: 360 }
 
   it('t_집중 = k · d / v (김포→하네다 약 41분)', () => {
     expect(focusMinutes(1160, opts)).toBe(41)
@@ -59,6 +59,6 @@ describe('focusMinutes', () => {
 
   it('하한·상한을 적용한다', () => {
     expect(focusMinutes(100, opts)).toBe(10)
-    expect(focusMinutes(20_000, opts)).toBe(180)
+    expect(focusMinutes(20_000, opts)).toBe(360)
   })
 })

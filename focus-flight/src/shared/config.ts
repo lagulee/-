@@ -34,5 +34,5 @@ export const DEFAULT_CONFIG: FlightConfig = {
   maxPauseMs: 5 * 60_000,
   pollIntervalMs: 1_000,
   minFocusMinutes: 10,
-  maxFocusMinutes: 180
+  maxFocusMinutes: 360
 }

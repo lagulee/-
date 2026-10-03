@@ -29,8 +29,24 @@ export const DEFAULT_SETTINGS: Settings = {
 }
 
 export interface PersistedData {
+  /** 저장 형식 버전. 기본값이 바뀌었을 때 옛 기본값을 새 값으로 옮기는 데 쓴다 */
+  schema?: number
   settings: Settings
   records: FlightRecord[]
+}
+
+export const SCHEMA = 2
+
+/** 옛 버전에서 저장된 데이터를 현재 형식으로 바꾼다 */
+export function migrate(data: PersistedData | null): PersistedData | null {
+  if (!data) return null
+  const out = { ...data }
+  if ((data.schema ?? 1) < 2 && data.settings?.config?.maxFocusMinutes === 180) {
+    // 0.1.6까지의 기본 최대 집중 시간(180분)을 장거리 노선용 새 기본값으로
+    out.settings = { ...data.settings, config: { ...data.settings.config, maxFocusMinutes: DEFAULT_CONFIG.maxFocusMinutes } }
+  }
+  out.schema = SCHEMA
+  return out
 }
 
 /** 렌더러로 보내는 화면 상태 */
@@ -74,8 +90,9 @@ export class FlightController {
     private readonly storage: Storage,
     private readonly clock: () => number = Date.now
   ) {
-    const loaded = storage.load()
+    const loaded = migrate(storage.load())
     this.data = {
+      schema: SCHEMA,
       settings: mergeSettings(loaded?.settings),
       records: loaded?.records ?? []
     }

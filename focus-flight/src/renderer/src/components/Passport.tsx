@@ -1,4 +1,4 @@
-import { CITIES, findCity } from '../../../shared/cities'
+import { CITIES, findCity, REGIONS } from '../../../shared/cities'
 import type { Snapshot } from '../../../shared/controller'
 import { AIRCRAFT } from '../../../shared/rewards'
 import { formatClock, formatHours } from '../useSnapshot'
@@ -17,17 +17,28 @@ export default function Passport({ snap }: { snap: Snapshot }) {
 
       <section>
         <h2>여권 도장 ({Object.keys(stats.stamps).length} / {CITIES.length})</h2>
-        <div className="stamps">
-          {CITIES.map((c) => {
-            const at = stats.stamps[c.code]
-            return (
-              <div key={c.code} className={`stamp ${at ? '' : 'empty'}`} title={c.name}>
-                {c.code}
-                <small>{at ? new Date(at).toLocaleDateString('ko-KR') : c.name}</small>
+        {REGIONS.map((r) => {
+          const list = CITIES.filter((c) => c.region === r)
+          const got = list.filter((c) => stats.stamps[c.code] !== undefined).length
+          return (
+            <div key={r} className="stamp-region">
+              <h3>
+                {r} <span className="muted small">{got} / {list.length}</span>
+              </h3>
+              <div className="stamps">
+                {list.map((c) => {
+                  const at = stats.stamps[c.code]
+                  return (
+                    <div key={c.code} className={`stamp ${at ? '' : 'empty'}`} title={c.name}>
+                      {c.code}
+                      <small>{at ? new Date(at).toLocaleDateString('ko-KR') : c.name}</small>
+                    </div>
+                  )
+                })}
               </div>
-            )
-          })}
-        </div>
+            </div>
+          )
+        })}
       </section>
 
       <section>

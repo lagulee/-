@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { CITIES, findCity } from '../../../shared/cities'
+import { CITIES, findCity, REGIONS } from '../../../shared/cities'
+import { BUCKETS, bucketOf, formatMinutes, type Bucket } from '../../../shared/durations'
 import { planRoute, type Snapshot } from '../../../shared/controller'
 import { progress, remainingMs } from '../../../shared/flightMachine'
 import { AIRCRAFT, milesFor } from '../../../shared/rewards'
 import { api } from '../api'
 import { formatClock } from '../useSnapshot'
 import CockpitView from './CockpitView'
-import FlightMap from './FlightMap'
+import RoutePicker from './RoutePicker'
 
 const PHASE_TEXT = {
   idle: '목적지를 고르세요',
@@ -22,42 +23,90 @@ export default function FlightView({ snap }: { snap: Snapshot }) {
   const { flight, settings } = snap
   const [from, setFrom] = useState('ICN')
   const [to, setTo] = useState('NRT')
+  const [bucket, setBucket] = useState<Bucket | null>(null)
   const plane = AIRCRAFT.find((a) => a.id === settings.aircraft)?.emoji ?? '✈️'
 
   if (flight.phase === 'idle') {
     const plan = planRoute(from, to, settings.config)
+    const minutesFrom = (code: string): number | null => {
+      const pl = planRoute(from, code, settings.config)
+      return pl ? Math.round(pl.durationMs / 60_000) : null
+    }
+    const pickTo = (code: string): void => {
+      if (code !== from) setTo(code)
+    }
     return (
       <div className="flight-layout">
-        <FlightMap
-          from={from}
-          to={to}
-          progress={null}
-          plane={plane}
-          stamps={snap.stats.stamps}
-          onPickCity={(c) => {
-            if (c !== from) setTo(c)
-          }}
-        />
+        <div className="picker-wrap">
+          <div className="bucket-chips">
+            <button className={bucket === null ? 'on' : ''} onClick={() => setBucket(null)}>
+              전체
+            </button>
+            {BUCKETS.map((b) => (
+              <button
+                key={b.id}
+                className={bucket?.id === b.id ? 'on' : ''}
+                onClick={() => setBucket(bucket?.id === b.id ? null : b)}
+              >
+                <i style={{ background: b.color }} />
+                {b.label}
+              </button>
+            ))}
+          </div>
+          <RoutePicker
+            from={from}
+            to={to}
+            config={settings.config}
+            stamps={snap.stats.stamps}
+            bucket={bucket}
+            onPick={pickTo}
+          />
+        </div>
         <aside className="panel">
           <h2>비행 예약</h2>
           <label>
             출발
-            <select value={from} onChange={(e) => setFrom(e.target.value)}>
-              {CITIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.code} · {c.name}
-                </option>
+            <select
+              value={from}
+              onChange={(e) => {
+                setFrom(e.target.value)
+                if (e.target.value === to) setTo(from)
+              }}
+            >
+              {REGIONS.map((r) => (
+                <optgroup key={r} label={r}>
+                  {CITIES.filter((c) => c.region === r).map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code} · {c.name}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </label>
           <label>
             도착 <small>(지도에서 도시를 눌러도 됩니다)</small>
-            <select value={to} onChange={(e) => setTo(e.target.value)}>
-              {CITIES.map((c) => (
-                <option key={c.code} value={c.code} disabled={c.code === from}>
-                  {c.code} · {c.name}
-                </option>
-              ))}
+            <select value={to} onChange={(e) => pickTo(e.target.value)}>
+              {REGIONS.map((r) => {
+                const list = CITIES.filter((c) => c.region === r && c.code !== from).filter((c) => {
+                  const m = minutesFrom(c.code)
+                  return bucket === null || c.code === to || (m !== null && bucketOf(m).id === bucket.id)
+                })
+                if (list.length === 0) return null
+                return (
+                  <optgroup key={r} label={r}>
+                    {list.map((c) => {
+                      const m = minutesFrom(c.code)
+                      return (
+                        <option key={c.code} value={c.code}>
+                          {c.code} · {c.name}
+                          {m !== null ? ` (${formatMinutes(m)})` : ''}
+                        </option>
+                      )
+                    })}
+                  </optgroup>
+                )
+              })}
             </select>
           </label>
           {plan ? (
@@ -166,7 +215,7 @@ function BoardingPass(props: { from: string; to: string; distanceKm: number; min
         </div>
         <div>
           <dt>집중 시간</dt>
-          <dd>{props.minutes}분</dd>
+          <dd>{formatMinutes(props.minutes)}</dd>
         </div>
         <div>
           <dt>예상 마일</dt>

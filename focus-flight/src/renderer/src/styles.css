@@ -523,8 +523,18 @@ main {
 
 .stamps {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
   gap: 10px;
+}
+
+.stamp-region h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 14px 0 8px;
+}
+
+.stamp-region .stamp {
+  font-size: 15px;
 }
 
 .stamp {
@@ -1129,4 +1139,158 @@ label.row select {
 .gauge small {
   font-size: 10px;
   opacity: 0.7;
+}
+
+/* ---------- 비행 예약 지도 ---------- */
+.picker-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.bucket-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bucket-chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 99px;
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.bucket-chips button.on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--panel-2));
+}
+
+.bucket-chips i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.picker-map {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--sea);
+}
+
+.picker-map svg {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.picker-map svg.grabbing {
+  cursor: grabbing;
+}
+
+.pick-city {
+  cursor: pointer;
+}
+
+.pick-city .hit {
+  fill: transparent;
+}
+
+.pick-city circle:not(.hit):not(.stamp-ring) {
+  stroke: #0b1220;
+  stroke-width: 1;
+  transition: r 0.15s;
+}
+
+.pick-city:hover circle:not(.hit):not(.stamp-ring) {
+  r: 7;
+}
+
+.pick-city .stamp-ring {
+  fill: none;
+  stroke: var(--ok);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 2;
+}
+
+.pick-city.to circle:not(.hit):not(.stamp-ring) {
+  stroke: #fff;
+  stroke-width: 2.5;
+}
+
+.pick-city.dim {
+  opacity: 0.18;
+}
+
+.pick-city text {
+  fill: var(--text);
+  font-size: 11px;
+  paint-order: stroke;
+  stroke: #0b1220;
+  stroke-width: 3px;
+  pointer-events: none;
+}
+
+.pick-city.from text,
+.pick-city.to text {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.zoom-ctl {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.zoom-ctl button {
+  min-width: 40px;
+  padding: 6px 8px;
+  font-size: 13px;
+  background: rgba(18, 27, 46, 0.85);
+}
+
+.zoom-ctl button[aria-label] {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.map-hint {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  background: rgba(11, 18, 32, 0.7);
+  padding: 3px 8px;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.city-tip.below {
+  transform: translate(-50%, 18px);
+}
+
+.city-tip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 16px));
+  background: rgba(11, 18, 32, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 7px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
 }
