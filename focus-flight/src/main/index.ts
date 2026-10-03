@@ -3,6 +3,7 @@ import path from 'node:path'
 import { FlightController, type Settings } from '../shared/controller'
 import { isActive, remainingMs, type Phase } from '../shared/flightMachine'
 import { IPC } from '../shared/ipc'
+import { isNewerVersion } from '../shared/version'
 import { ExtensionBridge } from './extensionBridge'
 import { JsonFileStorage } from './storage'
 import { getActiveWindow } from './windowWatcher'
@@ -219,10 +220,35 @@ function restartPolling(): void {
   timer = setInterval(() => void poll(), Math.max(250, controller.settings.config.pollIntervalMs))
 }
 
-if (!app.requestSingleInstanceLock()) {
+/** 다른 실행 파일(새 버전)이 켜졌을 때 넘겨받는 정보 */
+interface LaunchInfo {
+  version: string
+  exe: string
+  args: string[]
+}
+
+const launchInfo: LaunchInfo = {
+  version: app.getVersion(),
+  // 포터블 exe는 임시 폴더에서 실행되므로 원래 exe 경로를 넘긴다
+  exe: process.env.PORTABLE_EXECUTABLE_FILE ?? process.execPath,
+  args: process.argv.slice(1).filter((a) => a !== '--hidden')
+}
+
+if (!app.requestSingleInstanceLock(launchInfo)) {
   app.quit()
 } else {
-  app.on('second-instance', () => mainWindow?.show())
+  app.on('second-instance', (_e, _argv, _cwd, data) => {
+    const other = data as Partial<LaunchInfo> | undefined
+    if (other?.version && other.exe && isNewerVersion(other.version, app.getVersion())) {
+      // 더 새로운 버전이 실행되면 이 버전은 물러나고 새 버전을 대신 띄운다
+      quitting = true
+      bridge.stop()
+      app.relaunch({ execPath: other.exe, args: other.args ?? [] })
+      app.exit(0)
+      return
+    }
+    mainWindow?.show()
+  })
 
   app.whenReady().then(() => {
     app.setAppUserModelId('com.lagulee.focusflight')

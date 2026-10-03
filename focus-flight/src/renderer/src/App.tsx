@@ -25,7 +25,7 @@ export default function App() {
     <div className="app">
       <header>
         <div className="brand">
-          Focus <span>Flight</span>
+          Focus <span>Flight</span> <small className="version">v{__APP_VERSION__}</small>
         </div>
         <nav>
           {TABS.map((t) => (

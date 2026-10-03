@@ -26,6 +26,8 @@ jobs:
           cache-dependency-path: focus-flight/package-lock.json
 
       - run: npm ci
+      # 앱 버전을 릴리스 번호와 맞춘다 (새 버전이 이전 버전을 자동으로 교체할 때 비교에 쓰임)
+      - run: npm version 0.1.${{ github.run_number }} --no-git-tag-version --allow-same-version
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
