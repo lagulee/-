@@ -87,6 +87,9 @@ export default function RoutePicker({ from, to, config, stamps, bucket, onPick }
   const [, setDetailReady] = useState(false)
   const svgRef = useRef<SVGSVGElement>(null)
   const drag = useRef<{ x: number; y: number; view: View; moved: boolean } | null>(null)
+  /** 두 손가락 확대(핀치)용: 화면에 닿은 손가락들 */
+  const touches = useRef(new Map<number, { x: number; y: number }>())
+  const pinch = useRef<{ dist: number; view: View; mx: number; my: number } | null>(null)
 
   const projection = useMemo(() => makeProjection(view), [view])
   const path = useMemo(() => geoPath(projection), [projection])
@@ -141,10 +144,32 @@ export default function RoutePicker({ from, to, config, stamps, bucket, onPick }
     return () => svg.removeEventListener('wheel', onWheel)
   }, [])
 
+  const svgPoint = (x: number, y: number): [number, number] => {
+    const r = svgRef.current!.getBoundingClientRect()
+    return [((x - r.left) / r.width) * W, ((y - r.top) / r.height) * H]
+  }
+
   const onDown = (e: PointerEvent<SVGSVGElement>): void => {
+    touches.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (touches.current.size === 2) {
+      const [p1, p2] = [...touches.current.values()]
+      const [mx, my] = svgPoint((p1.x + p2.x) / 2, (p1.y + p2.y) / 2)
+      pinch.current = { dist: Math.hypot(p1.x - p2.x, p1.y - p2.y), view, mx, my }
+      drag.current = null
+      setMoving(true)
+      return
+    }
     drag.current = { x: e.clientX, y: e.clientY, view, moved: false }
   }
   const onMove = (e: PointerEvent<SVGSVGElement>): void => {
+    if (touches.current.has(e.pointerId)) touches.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    const pc = pinch.current
+    if (pc && touches.current.size === 2) {
+      const [p1, p2] = [...touches.current.values()]
+      const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y)
+      setView(zoomAt(pc.view, dist / Math.max(1, pc.dist), pc.mx, pc.my))
+      return
+    }
     const d = drag.current
     if (!d) return
     const r = svgRef.current!.getBoundingClientRect()
@@ -164,6 +189,15 @@ export default function RoutePicker({ from, to, config, stamps, bucket, onPick }
     })
   }
   const onUp = (e: PointerEvent<SVGSVGElement>): void => {
+    touches.current.delete(e.pointerId)
+    if (pinch.current) {
+      if (touches.current.size < 2) {
+        pinch.current = null
+        drag.current = null
+        setMoving(false)
+      }
+      return
+    }
     const d = drag.current
     drag.current = null
     setMoving(false)
@@ -189,6 +223,7 @@ export default function RoutePicker({ from, to, config, stamps, bucket, onPick }
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
+        onPointerCancel={onUp}
         onPointerLeave={() => setHover(null)}
       >
         <path d={spherePath} className="map-sea" />
@@ -239,7 +274,11 @@ export default function RoutePicker({ from, to, config, stamps, bucket, onPick }
         <button onClick={() => a && b && a.code !== b.code && setView(fitRoute(a, b))}>노선</button>
         <button onClick={() => setView(WORLD)}>전체</button>
       </div>
-      <div className="map-hint">휠: 확대·축소 · 끌기: 이동 · 도시 클릭: 도착지 선택</div>
+      <div className="map-hint">
+        {matchMedia('(pointer: coarse)').matches
+          ? '두 손가락: 확대·축소 · 끌기: 이동 · 도시 누르기: 도착지 선택'
+          : '휠: 확대·축소 · 끌기: 이동 · 도시 클릭: 도착지 선택'}
+      </div>
     </div>
   )
 

@@ -169,7 +169,8 @@ let globeCache: HTMLCanvasElement | null = null
 /** 지구 전체 텍스처를 한 번만 그려 둔다 (앱이 한가할 때 미리 호출하면 이륙 순간 끊김이 없다) */
 export async function globeCanvas(): Promise<{ geo: GeoData; canvas: HTMLCanvasElement }> {
   const geo = await loadGeoData()
-  globeCache ??= paintGlobe(geo)
+  // 휴대폰은 메모리를 아끼려고 절반 해상도
+  globeCache ??= paintGlobe(geo, matchMedia('(pointer: coarse)').matches ? 2048 : 4096)
   return { geo, canvas: globeCache }
 }
 

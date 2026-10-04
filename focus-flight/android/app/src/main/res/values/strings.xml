@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Focus Flight</string>
+    <string name="title_activity_main">Focus Flight</string>
+    <string name="package_name">com.lagulee.focusflight</string>
+    <string name="custom_url_scheme">com.lagulee.focusflight</string>
+</resources>

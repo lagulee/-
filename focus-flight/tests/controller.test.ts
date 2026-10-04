@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { FlightController, planRoute, type PersistedData, type Storage } from '../src/shared/controller'
 import { DEFAULT_CONFIG } from '../src/shared/config'
+import { explainAndroid, SCREEN_OFF } from '../src/shared/allowlist'
 
 class MemoryStorage implements Storage {
   data: PersistedData | null = null
@@ -112,5 +113,47 @@ describe('FlightController', () => {
     ctl.observeWindow({ processName: 'chrome.exe', title: '과제 - Notion - Chrome' })
     expect(ctl.flight.phase).toBe('flying')
     expect(ctl.snapshot().activeWindow?.reason).toContain('notion.so')
+  })
+  it('안드로이드: 백그라운드에 있던 동안의 기록을 나중에 재생해 정확히 추락을 판정한다', () => {
+    let t = 1_000_000
+    const storage = new MemoryStorage()
+    const env = { ownPackage: 'com.lagulee.focusflight', launchers: ['com.android.launcher3'] }
+    const ctl = new FlightController(storage, () => t, (w, list) => explainAndroid(w, list, env))
+    ctl.updateSettings({ allowlist: { apps: ['com.spotify.music'], sites: [], playlists: [], titleKeywords: [] } })
+    ctl.board('ICN', 'NRT')
+    t += 5_000
+    ctl.tick()
+    // 앱을 나가 홈 화면 → 스포티파이(허용) → 인스타그램(비허용) 20초
+    const base = t
+    const app = (pkg: string) => ({ processName: pkg, title: '' })
+    t += 60_000 // 돌아와서 한꺼번에 재생
+    ctl.observeWindowAt(app('com.android.launcher3'), base + 1_000)
+    ctl.observeWindowAt(app('com.spotify.music'), base + 2_000)
+    ctl.observeWindowAt(app('com.instagram.android'), base + 10_000)
+    ctl.observeWindowAt(app('com.lagulee.focusflight'), base + 30_000)
+    expect(ctl.flight.phase).toBe('crashed')
+    expect(ctl.flight.phaseSince).toBe(base + 10_000 + DEFAULT_CONFIG.toleranceMs + DEFAULT_CONFIG.graceMs)
+  })
+
+  it('안드로이드: 화면을 끄는 것은 집중으로 본다', () => {
+    let t = 1_000_000
+    const env = { ownPackage: 'com.lagulee.focusflight', launchers: [] }
+    const ctl = new FlightController(new MemoryStorage(), () => t, (w, list) => explainAndroid(w, list, env))
+    ctl.board('ICN', 'NRT')
+    t += 5_000
+    ctl.observeWindowAt({ processName: SCREEN_OFF, title: '' }, t)
+    t += 20 * 60_000
+    ctl.tick()
+    expect(ctl.flight.phase).toBe('flying')
+  })
+
+  it('기록 재생 중 시간이 거꾸로 가지 않는다', () => {
+    const { ctl, clock } = setup()
+    ctl.board('ICN', 'NRT')
+    clock.advance(10_000)
+    ctl.tick()
+    const elapsed = ctl.flight.elapsedMs
+    ctl.observeWindowAt({ processName: 'code.exe', title: 'x' }, 0)
+    expect(ctl.flight.elapsedMs).toBe(elapsed)
   })
 })

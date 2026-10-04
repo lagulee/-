@@ -155,7 +155,9 @@ export class FlightScene {
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true })
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+    // 휴대폰은 화면 밀도가 높아 그대로 그리면 무거우므로 낮춘다
+    const coarse = matchMedia('(pointer: coarse)').matches
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, coarse ? 1.25 : 1.5))
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
 
     this.scene.fog = new THREE.Fog(0xa9c8e8, 20, 170)

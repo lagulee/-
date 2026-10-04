@@ -4,7 +4,8 @@ import { BUCKETS, bucketOf, formatMinutes, type Bucket } from '../../../shared/d
 import { planRoute, type Snapshot } from '../../../shared/controller'
 import { progress, remainingMs } from '../../../shared/flightMachine'
 import { AIRCRAFT, milesFor } from '../../../shared/rewards'
-import { api } from '../api'
+import { api, platform } from '../api'
+import { PermissionBanner } from './AndroidSetup'
 import { formatClock } from '../useSnapshot'
 import CockpitView from './CockpitView'
 import RoutePicker from './RoutePicker'
@@ -63,6 +64,7 @@ export default function FlightView({ snap }: { snap: Snapshot }) {
           />
         </div>
         <aside className="panel">
+          {platform === 'android' && <PermissionBanner compact />}
           <h2>비행 예약</h2>
           <label>
             출발
@@ -256,20 +258,24 @@ function WindowStatus({ snap }: { snap: Snapshot }) {
   return (
     <div className="window-status">
       <div>
-        현재 창:{' '}
+        {platform === 'android' ? '지금 앱' : '현재 창'}:{' '}
         {w ? (
           <span className={`verdict ${w.verdict}`}>
-            {w.processName} · {w.verdict === 'allowed' ? '허용' : w.verdict === 'blocked' ? '비허용' : '시스템'}
+            {w.appName && platform === 'android' ? w.appName : w.processName} ·{' '}
+            {w.verdict === 'allowed' ? '허용' : w.verdict === 'blocked' ? '비허용' : '시스템'}
           </span>
         ) : (
           <span className="muted">감지 안 됨</span>
         )}
       </div>
       {w?.title && <div className="muted small ellipsis">{w.title}</div>}
+      {platform === 'android' && w && <div className="muted small ellipsis">{w.processName}</div>}
       {w && <div className="muted small">판정: {w.reason}</div>}
-      <div className="muted small">
-        브라우저 확장: {snap.extensionConnected ? '연결됨 (URL로 판정)' : '미연결 (창 제목으로 근사)'}
-      </div>
+      {platform !== 'android' && (
+        <div className="muted small">
+          브라우저 확장: {snap.extensionConnected ? '연결됨 (URL로 판정)' : '미연결 (창 제목으로 근사)'}
+        </div>
+      )}
     </div>
   )
 }

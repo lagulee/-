@@ -133,6 +133,39 @@ export function explainWindow(w: WindowInfo | null, list: AllowList): Judgement 
   return { verdict: 'blocked', reason: '허용 목록에 없는 앱' }
 }
 
+/** 안드로이드: 기기 정보 (플러그인이 알려 줌) */
+export interface AndroidEnv {
+  ownPackage: string
+  /** 홈 화면 앱들 */
+  launchers: string[]
+}
+
+/** 화면이 꺼졌거나 Focus Flight가 백그라운드로 간 것을 나타내는 가상 창 */
+export const SCREEN_OFF = '__screen_off__'
+export const APP_BACKGROUND = '__background__'
+
+/** 안드로이드에서 판정하지 않는 시스템 화면 (알림창, 권한 대화상자 등) */
+export const ANDROID_SYSTEM = [
+  'com.android.systemui',
+  'com.android.permissioncontroller',
+  'com.google.android.permissioncontroller',
+  'com.android.packageinstaller',
+  'com.google.android.packageinstaller'
+]
+
+/** 안드로이드: processName은 패키지 이름, 허용 목록의 apps도 패키지 이름 */
+export function explainAndroid(w: WindowInfo | null, list: AllowList, env: AndroidEnv): Judgement {
+  if (!w) return { verdict: 'neutral', reason: '앱을 감지하지 못함' }
+  const pkg = w.processName
+  if (pkg === SCREEN_OFF) return { verdict: 'allowed', reason: '화면 꺼짐' }
+  if (pkg === APP_BACKGROUND) return { verdict: 'blocked', reason: 'Focus Flight를 벗어남 (사용 기록 권한이 없어 앱을 알 수 없음)' }
+  if (pkg === env.ownPackage) return { verdict: 'allowed', reason: 'Focus Flight' }
+  if (env.launchers.includes(pkg)) return { verdict: 'neutral', reason: '홈 화면' }
+  if (ANDROID_SYSTEM.includes(pkg)) return { verdict: 'neutral', reason: '시스템 화면' }
+  if (list.apps.includes(pkg)) return { verdict: 'allowed', reason: '허용 앱' }
+  return { verdict: 'blocked', reason: '허용 목록에 없는 앱' }
+}
+
 export function judgeWindow(w: WindowInfo | null, list: AllowList): Verdict {
   return explainWindow(w, list).verdict
 }

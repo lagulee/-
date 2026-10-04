@@ -1,6 +1,6 @@
 # Focus Flight — Claude Code 작업 지침
 
-Windows용 집중 타이머. 비행 콘셉트(목적지 → 탑승 → 비행 → 착륙/추락)와 허용 목록 기반 방해 차단을 결합한다.
+Windows·안드로이드용 집중 타이머. 비행 콘셉트(목적지 → 탑승 → 비행 → 착륙/추락)와 허용 목록 기반 방해 차단을 결합한다.
 강제 차단 도구가 아니라 **자기 약속을 돕는 동기부여 도구**다. 다른 앱을 강제 종료하지 않는다.
 
 ## 스택
@@ -9,6 +9,8 @@ Windows용 집중 타이머. 비행 콘셉트(목적지 → 탑승 → 비행 �
 - 지도: `d3-geo` + `world-atlas` (태평양 중심 Natural Earth 도법)
 - 테스트: Vitest (`npm test`)
 - 저장: userData 폴더의 JSON 파일 하나 (`src/main/storage.ts`). 외부 전송 없음.
+- 안드로이드: Capacitor 8 (`android/`). 같은 React 화면을 `vite.mobile.config.ts`로 빌드해 넣는다.
+  이 작업 환경에서는 Google Maven이 막혀 있어 안드로이드 빌드는 GitHub Actions에서만 한다.
 
 ## 구조
 - `src/shared/` — 순수 로직. Electron/DOM에 의존하지 않으며 모두 테스트한다.
@@ -24,6 +26,13 @@ Windows용 집중 타이머. 비행 콘셉트(목적지 → 탑승 → 비행 �
   - `three/` 3D 비행 화면 (three.js). 지구 R=1000 단위, 고도는 시각적으로 과장. 지형은 전체 텍스처 + 비행기 주변 조각 2단계
   - `flightMotion.ts` 이륙(활주·기수 들기)·상승·하강 연출 값 (순수 함수, 테스트 있음)
 - `extension/` — Chromium(Chrome/Edge/Whale) MV3 확장. 현재 탭 URL을 앱에 전달
+- `android/` — Capacitor 안드로이드 프로젝트
+  - `FocusMonitorPlugin.java` 사용 기록(UsageStats)으로 앱 전환·화면 꺼짐 기록, 설치 앱 목록, 권한
+  - `FocusWatchService.java` 비행 중 포그라운드 서비스: 다른 앱이면 난기류 알림
+  - 화면(`src/renderer/src/api.ts`)이 컨트롤러를 직접 돌리고, 앱으로 돌아올 때 그동안의 기록을
+    `observeWindowAt`으로 시간순 재생해 착륙·추락을 정확히 계산한다
+  - 판정은 `explainAndroid` (허용 목록 `apps` = 패키지 이름, 홈 화면·시스템 UI는 neutral, 화면 꺼짐은 집중)
+  - 서명 키 `android/app/focusflight.keystore`는 덮어쓰기 설치용 개인 배포 키 (Play 스토어용 아님)
 
 ## 상태 기계
 ```
@@ -47,4 +56,5 @@ idle → boarding → flying ⇄ turbulence → landed | crashed
 - 새 로직은 `src/shared/`에 순수 함수로 넣고 테스트부터 작성한다.
 - 임의로 정한 값(k=0.5, 유예 10초 등)은 하드코딩하지 말고 `config.ts`의 `FlightConfig`에 둔다.
 - 창 제목·URL은 민감 정보일 수 있다. 로컬 밖으로 보내거나 로그로 남기지 않는다.
+  (안드로이드는 감지 확인용으로 패키지 이름만 기기 로그에 `[ff]` 접두어로 남긴다)
 - 커밋 전: `npm run typecheck && npm test && npm run build`

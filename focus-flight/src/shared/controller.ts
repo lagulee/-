@@ -1,4 +1,11 @@
-import { DEFAULT_ALLOWLIST, explainWindow, type AllowList, type Verdict, type WindowInfo } from './allowlist'
+import {
+  DEFAULT_ALLOWLIST,
+  explainWindow,
+  type AllowList,
+  type Judgement,
+  type Verdict,
+  type WindowInfo
+} from './allowlist'
 import { findCity } from './cities'
 import { DEFAULT_CONFIG, type FlightConfig } from './config'
 import {
@@ -86,9 +93,14 @@ export class FlightController {
   private flightStartedAt: number | null = null
   extensionConnected = false
 
+  /** 마지막으로 처리한 사건 시각. 시간이 거꾸로 가지 않게 한다 (기록 재생 시) */
+  private lastAt = 0
+
   constructor(
     private readonly storage: Storage,
-    private readonly clock: () => number = Date.now
+    private readonly clock: () => number = Date.now,
+    /** 창 판정 방식 (Windows: 실행 파일·창 제목, 안드로이드: 패키지 이름) */
+    private readonly judge: (w: WindowInfo | null, list: AllowList) => Judgement = explainWindow
   ) {
     const loaded = migrate(storage.load())
     this.data = {
@@ -108,6 +120,9 @@ export class FlightController {
   }
 
   private dispatch(ev: FlightEvent): void {
+    // 지난 기록을 다시 재생할 때도 시각이 앞으로만 흐르게
+    ev = { ...ev, now: Math.max(ev.now, this.lastAt) }
+    this.lastAt = ev.now
     const before = this.state
     this.state = transition(before, ev, this.data.settings.config)
     if (
@@ -177,12 +192,17 @@ export class FlightController {
 
   /** 활성 창 감시 결과를 반영한다. neutral 이면 포커스 상태를 바꾸지 않는다. */
   observeWindow(w: WindowInfo | null): Verdict {
-    const { verdict, reason } = explainWindow(w, this.data.settings.allowlist)
+    return this.observeWindowAt(w, this.clock())
+  }
+
+  /** 과거 시각 at에 그 창이 앞에 있었다는 기록을 반영한다 (안드로이드 사용 기록 재생용) */
+  observeWindowAt(w: WindowInfo | null, at: number): Verdict {
+    const { verdict, reason } = this.judge(w, this.data.settings.allowlist)
     this.activeWindow = w ? { ...w, verdict, reason } : null
     if (verdict !== 'neutral') {
-      this.dispatch({ type: 'FOCUS', allowed: verdict === 'allowed', now: this.clock() })
+      this.dispatch({ type: 'FOCUS', allowed: verdict === 'allowed', now: at })
     } else {
-      this.tick()
+      this.dispatch({ type: 'TICK', now: at })
     }
     return verdict
   }

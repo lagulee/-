@@ -201,7 +201,7 @@ export default function CockpitView({ snap, plane }: { snap: Snapshot; plane: st
           <div className="hud-alert-title">⚠️ 난기류! {Math.max(0, Math.ceil(turbulenceLeft / 1000))}초 안에 돌아오세요</div>
           {w && (
             <div className="hud-alert-sub">
-              지금 창: {w.processName} — {w.reason}
+              지금 앱: {w.appName ?? w.processName} — {w.reason}
             </div>
           )}
         </div>

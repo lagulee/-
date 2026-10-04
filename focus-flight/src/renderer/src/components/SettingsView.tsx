@@ -4,7 +4,8 @@ import type { FlightConfig } from '../../../shared/config'
 import type { Snapshot } from '../../../shared/controller'
 import { isActive } from '../../../shared/flightMachine'
 import { unlockedAircraft } from '../../../shared/rewards'
-import { api } from '../api'
+import { api, platform } from '../api'
+import { AndroidAppPicker, PermissionBanner } from './AndroidSetup'
 
 export default function SettingsView({ snap }: { snap: Snapshot }) {
   const { settings } = snap
@@ -19,6 +20,13 @@ export default function SettingsView({ snap }: { snap: Snapshot }) {
     <div className="page settings">
       {flying && <p className="banner warn">비행 중에는 허용 목록을 넓힐 수 없습니다. (자기 약속 지키기!)</p>}
 
+      {platform === 'android' ? (
+        <section>
+          <h2>권한</h2>
+          <PermissionBanner />
+          <AndroidAppPicker list={list} locked={flying} onChange={(apps) => setList({ apps })} />
+        </section>
+      ) : (
       <section>
         <h2>허용 목록</h2>
         <p className="muted">목록에 없는 창이 앞에 오면 난기류가 발생합니다. 시스템 창(작업 표시줄, UAC 등)은 무시합니다.</p>
@@ -54,6 +62,7 @@ export default function SettingsView({ snap }: { snap: Snapshot }) {
           onChange={(titleKeywords) => setList({ titleKeywords })}
         />
       </section>
+      )}
 
       <section>
         <h2>비행 규칙</h2>
@@ -88,6 +97,7 @@ export default function SettingsView({ snap }: { snap: Snapshot }) {
             ))}
           </select>
         </label>
+        {platform === 'desktop' && (
         <label className="row">
           <input
             type="checkbox"
@@ -96,6 +106,7 @@ export default function SettingsView({ snap }: { snap: Snapshot }) {
           />
           Windows 시작 시 트레이에서 자동 실행
         </label>
+        )}
         <button
           className="danger"
           disabled={flying}
