@@ -16,6 +16,7 @@ export interface FocusMonitorPlugin {
     sdk: number
     launchers: string[]
   }>
+  log(opts: { message: string }): Promise<void>
   openUsageSettings(): Promise<void>
   requestNotifications(): Promise<{ granted: boolean }>
   getEvents(opts: { since: number }): Promise<{ now: number; screenOn: boolean; granted: boolean; events: FocusEvent[] }>

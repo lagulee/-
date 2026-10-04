@@ -147,8 +147,10 @@ jobs:
             sleep 8
             adb shell am start -n com.lagulee.focusflight/.MainActivity
             sleep 10
+            adb exec-out screencap -p > dist-android/Android-test-after.png
+            adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" | head -3
             adb logcat -d > dist-android/logcat.txt
-            grep -E "\[ff\]|FocusMonitor|AndroidRuntime" dist-android/logcat.txt | tail -40
+            grep -E "FocusFlight|Capacitor|AndroidRuntime|FATAL" dist-android/logcat.txt | tail -60
             grep -q "\[ff\] foreground: com.android.settings blocked" dist-android/logcat.txt
             grep -q "\[ff\] foreground: com.lagulee.focusflight allowed" dist-android/logcat.txt
 
@@ -158,6 +160,20 @@ jobs:
         with:
           name: android-test
           path: focus-flight/dist-android/*
+
+      # 실패했을 때도 화면과 로그를 볼 수 있게 테스트 전용 사전 릴리스에 올린다 (사용자용 릴리스와 별개)
+      - name: 테스트 화면·로그 공개 (android-test)
+        if: always()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-test
+          name: Android 자동 테스트 기록 (사용자용 아님)
+          prerelease: true
+          make_latest: false
+          body: CI 에뮬레이터 테스트의 최근 화면과 로그입니다. 앱 설치는 최신 정식 릴리스에서 하세요.
+          files: |
+            focus-flight/dist-android/*.png
+            focus-flight/dist-android/logcat.txt
 
       - uses: actions/upload-artifact@v4
         with:

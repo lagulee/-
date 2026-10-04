@@ -102,6 +102,13 @@ public class FocusMonitorPlugin extends Plugin {
         call.resolve(ret);
     }
 
+    /** 감지 과정을 기기 로그에 남긴다 (릴리스 빌드에서도). 패키지 이름만 담는다 */
+    @PluginMethod
+    public void log(PluginCall call) {
+        android.util.Log.i("FocusFlight", call.getString("message", ""));
+        call.resolve();
+    }
+
     @PluginMethod
     public void openUsageSettings(PluginCall call) {
         Intent intent = new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS);

@@ -137,6 +137,11 @@ export async function refreshAndroidEnv(): Promise<void> {
   envListeners.forEach((l) => l())
 }
 
+/** 기기 로그(logcat, 태그 FocusFlight)에 남긴다. 릴리스 빌드에서는 console이 logcat에 안 나오므로 네이티브로 */
+function devLog(message: string): void {
+  void FocusMonitor.log({ message }).catch(() => undefined)
+}
+
 function createAndroidApi(): FocusFlightApi {
   const env: AndroidEnv = { ownPackage: 'com.lagulee.focusflight', launchers: [] }
   const ctl = new FlightController(localStorageStore('focus-flight'), Date.now, (w, list) =>
@@ -191,12 +196,12 @@ function createAndroidApi(): FocusFlightApi {
             verdict = ctl.observeWindowAt({ processName: SCREEN_OFF, appName: '화면 꺼짐', title: '' }, e.t)
           }
           // 기기 로그(logcat)로 감지 과정을 확인할 수 있게 남긴다 (패키지 이름만, CI 에뮬레이터 테스트에서도 사용)
-          if (verdict) console.info(`[ff] foreground: ${e.pkg ?? e.type} ${verdict} phase=${ctl.flight.phase}`)
+          if (verdict) devLog(`[ff] foreground: ${e.pkg ?? e.type} ${verdict} phase=${ctl.flight.phase}`)
         }
         lastSync = res.now
         if (document.visibilityState === 'visible') {
           const v = ctl.observeWindow({ processName: env.ownPackage, appName: 'Focus Flight', title: '' })
-          if (events.length > 0 || !loggedOwn) console.info(`[ff] foreground: ${env.ownPackage} ${v} phase=${ctl.flight.phase}`)
+          if (events.length > 0 || !loggedOwn) devLog(`[ff] foreground: ${env.ownPackage} ${v} phase=${ctl.flight.phase}`)
           loggedOwn = true
         }
       } else {
@@ -204,7 +209,7 @@ function createAndroidApi(): FocusFlightApi {
       }
       emit()
     } catch (err) {
-      console.warn('[ff] sync failed', err)
+      devLog(`[ff] sync failed: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       busy = false
     }
@@ -214,8 +219,9 @@ function createAndroidApi(): FocusFlightApi {
     .then(() => {
       env.ownPackage = androidEnv!.ownPackage
       env.launchers = androidEnv!.launchers
+      devLog(`[ff] env usage=${androidEnv!.usageGranted} notif=${androidEnv!.notificationsGranted} launchers=${env.launchers.join(',')}`)
     })
-    .catch(() => undefined)
+    .catch((err) => devLog(`[ff] env failed: ${String(err)}`))
     .finally(() => void sync())
 
   setInterval(() => {
