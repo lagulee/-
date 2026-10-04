@@ -16,7 +16,7 @@
 
 ## 휴대폰 웹 버전 (설치 없음)
 
-1. 휴대폰 브라우저(Chrome, 삼성 인터넷, Safari)에서 **https://lagulee.github.io/-/** 열기
+1. 휴대폰 브라우저(Chrome, 삼성 인터넷, Safari)에서 **https://lagulee.github.io/-/app/** 열기
 2. 브라우저 메뉴의 **홈 화면에 추가**를 누르면 앱처럼 아이콘으로 실행
 
 - 비행 중 Focus Flight 화면을 벗어나면(다른 앱·탭) 난기류, 10초 넘게 안 돌아오면 추락합니다.
