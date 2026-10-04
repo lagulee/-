@@ -18,6 +18,6 @@ export default defineConfig({
       rollupOptions: { input: resolve(__dirname, 'src/renderer/index.html') }
     },
     plugins: [react()],
-    define: { __APP_VERSION__: JSON.stringify(version) }
+    define: { __APP_VERSION__: JSON.stringify(version), __WEB_APP__: false }
   }
 })

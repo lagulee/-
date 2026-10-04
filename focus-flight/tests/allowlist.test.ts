@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   explainAndroid,
+  explainWeb,
+  WEB_APP,
   explainWindow,
   hostMatches,
   siteTitleKeyword,
@@ -128,5 +130,12 @@ describe('explainAndroid', () => {
 
   it('설정 앱이 홈 후보(FallbackHome)로 잡혀도 홈 화면으로 보지 않는다 (에뮬레이터에서 발견)', () => {
     expect(explainAndroid(app('com.android.settings'), l, env).verdict).toBe('blocked')
+  })
+})
+
+describe('explainWeb', () => {
+  it('Focus Flight 화면이면 집중, 아니면 이탈', () => {
+    expect(explainWeb({ processName: WEB_APP, title: '' }).verdict).toBe('allowed')
+    expect(explainWeb({ processName: '__background__', title: '' }).verdict).toBe('blocked')
   })
 })

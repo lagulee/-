@@ -167,6 +167,15 @@ export function explainAndroid(w: WindowInfo | null, list: AllowList, env: Andro
   return { verdict: 'blocked', reason: '허용 목록에 없는 앱' }
 }
 
+/** 웹 버전: Focus Flight 화면이 보이면 집중, 안 보이면(다른 앱·탭·화면 꺼짐) 이탈 */
+export const WEB_APP = '__focus_flight_web__'
+
+export function explainWeb(w: WindowInfo | null): Judgement {
+  if (!w) return { verdict: 'neutral', reason: '알 수 없음' }
+  if (w.processName === WEB_APP) return { verdict: 'allowed', reason: 'Focus Flight 화면' }
+  return { verdict: 'blocked', reason: 'Focus Flight 화면을 벗어남 (다른 앱·탭 또는 화면 꺼짐)' }
+}
+
 export function judgeWindow(w: WindowInfo | null, list: AllowList): Verdict {
   return explainWindow(w, list).verdict
 }

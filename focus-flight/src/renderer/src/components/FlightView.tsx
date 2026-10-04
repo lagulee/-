@@ -258,10 +258,10 @@ function WindowStatus({ snap }: { snap: Snapshot }) {
   return (
     <div className="window-status">
       <div>
-        {platform === 'android' ? '지금 앱' : '현재 창'}:{' '}
+        {platform === 'android' ? '지금 앱' : platform === 'web' ? '지금' : '현재 창'}:{' '}
         {w ? (
           <span className={`verdict ${w.verdict}`}>
-            {w.appName && platform === 'android' ? w.appName : w.processName} ·{' '}
+            {w.appName && (platform === 'android' || platform === 'web') ? w.appName : w.processName} ·{' '}
             {w.verdict === 'allowed' ? '허용' : w.verdict === 'blocked' ? '비허용' : '시스템'}
           </span>
         ) : (
@@ -271,7 +271,7 @@ function WindowStatus({ snap }: { snap: Snapshot }) {
       {w?.title && <div className="muted small ellipsis">{w.title}</div>}
       {platform === 'android' && w && <div className="muted small ellipsis">{w.processName}</div>}
       {w && <div className="muted small">판정: {w.reason}</div>}
-      {platform !== 'android' && (
+      {(platform === 'desktop' || platform === 'preview') && (
         <div className="muted small">
           브라우저 확장: {snap.extensionConnected ? '연결됨 (URL로 판정)' : '미연결 (창 제목으로 근사)'}
         </div>

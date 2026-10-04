@@ -4,7 +4,7 @@ import type { FlightConfig } from '../../../shared/config'
 import type { Snapshot } from '../../../shared/controller'
 import { isActive } from '../../../shared/flightMachine'
 import { unlockedAircraft } from '../../../shared/rewards'
-import { api, platform } from '../api'
+import { api, platform, webStatus } from '../api'
 import { AndroidAppPicker, PermissionBanner } from './AndroidSetup'
 
 export default function SettingsView({ snap }: { snap: Snapshot }) {
@@ -20,7 +20,18 @@ export default function SettingsView({ snap }: { snap: Snapshot }) {
     <div className="page settings">
       {flying && <p className="banner warn">비행 중에는 허용 목록을 넓힐 수 없습니다. (자기 약속 지키기!)</p>}
 
-      {platform === 'android' ? (
+      {platform === 'web' ? (
+        <section>
+          <h2>웹 버전 규칙</h2>
+          <ul className="web-rules">
+            <li>비행 중 <b>Focus Flight 화면을 벗어나면</b>(다른 앱·다른 탭) 2초 뒤 난기류, 10초 넘게 안 돌아오면 추락합니다.</li>
+            <li>웹에서는 화면 꺼짐과 앱 전환을 구분할 수 없어서 <b>화면을 끄는 것도 이탈</b>로 봅니다. 대신 비행 중에는 화면이 저절로 꺼지지 않게 해 둡니다{webStatus.wakeLockSupported ? '' : ' (이 브라우저는 지원하지 않아요 — 휴대폰의 화면 자동 꺼짐 시간을 늘려 주세요)'}.</li>
+            <li>급한 일이 있으면 <b>일시정지</b>를 먼저 누르고 다녀오세요.</li>
+            <li>기록은 이 브라우저에만 저장됩니다. 브라우저 데이터를 지우면 사라집니다.</li>
+            <li>브라우저 메뉴의 <b>홈 화면에 추가</b>를 누르면 앱처럼 아이콘으로 실행할 수 있습니다.</li>
+          </ul>
+        </section>
+      ) : platform === 'android' ? (
         <section>
           <h2>권한</h2>
           <PermissionBanner />

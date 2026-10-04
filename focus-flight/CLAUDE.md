@@ -26,6 +26,9 @@ Windows·안드로이드용 집중 타이머. 비행 콘셉트(목적지 → 탑
   - `three/` 3D 비행 화면 (three.js). 지구 R=1000 단위, 고도는 시각적으로 과장. 지형은 전체 텍스처 + 비행기 주변 조각 2단계
   - `flightMotion.ts` 이륙(활주·기수 들기)·상승·하강 연출 값 (순수 함수, 테스트 있음)
 - `extension/` — Chromium(Chrome/Edge/Whale) MV3 확장. 현재 탭 URL을 앱에 전달
+- 웹 버전: `vite.pages.config.ts` (`__WEB_APP__`=true) → CI가 gh-pages 브랜치로 배포 (https://lagulee.github.io/-/)
+  - `explainWeb`: 화면이 보이면 집중, 숨겨지면(Page Visibility) 이탈. 비행 중 Wake Lock으로 화면 꺼짐 방지
+  - `src/renderer/public/`의 manifest·sw.js·아이콘으로 홈 화면 추가(PWA)·오프라인 지원
 - `android/` — Capacitor 안드로이드 프로젝트
   - `FocusMonitorPlugin.java` 사용 기록(UsageStats)으로 앱 전환·화면 꺼짐 기록, 설치 앱 목록, 권한
   - `FocusWatchService.java` 비행 중 포그라운드 서비스: 다른 앱이면 난기류 알림

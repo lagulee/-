@@ -9,6 +9,6 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   root: resolve(__dirname, 'src/renderer'),
   plugins: [react()],
-  define: { __APP_VERSION__: JSON.stringify(version) },
+  define: { __APP_VERSION__: JSON.stringify(version), __WEB_APP__: false },
   build: { outDir: resolve(__dirname, 'out/web'), emptyOutDir: true }
 })

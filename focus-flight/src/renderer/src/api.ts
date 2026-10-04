@@ -4,6 +4,8 @@ import {
   ANDROID_SYSTEM,
   APP_BACKGROUND,
   explainAndroid,
+  explainWeb,
+  WEB_APP,
   SCREEN_OFF,
   type AndroidEnv,
   type WindowInfo
@@ -16,15 +18,18 @@ import { FocusMonitor } from './native/focusMonitor'
 /**
  * - desktop: Electron (preload가 넣어 준 window.focusFlight 사용)
  * - android: Capacitor 앱. 컨트롤러를 화면 안에서 돌리고 네이티브 플러그인으로 앱 사용 기록을 받는다
+ * - web: 웹 버전(GitHub Pages). 화면이 보이는지(Page Visibility)로만 이탈을 판정
  * - preview: 브라우저 미리보기 (가상 활성 창)
  */
-export type Platform = 'desktop' | 'android' | 'preview'
+export type Platform = 'desktop' | 'android' | 'web' | 'preview'
 
 export const platform: Platform = window.focusFlight
   ? 'desktop'
   : Capacitor.getPlatform() === 'android'
     ? 'android'
-    : 'preview'
+    : __WEB_APP__
+      ? 'web'
+      : 'preview'
 
 export const isMock = platform === 'preview'
 
@@ -248,5 +253,57 @@ function createAndroidApi(): FocusFlightApi {
   return api
 }
 
+/** 웹 버전에서 화면 자동 꺼짐을 막고 있는지 (설정 화면 표시용) */
+export const webStatus = { wakeLock: false as boolean, wakeLockSupported: 'wakeLock' in navigator }
+
+function createWebApi(): FocusFlightApi {
+  const ctl = new FlightController(localStorageStore('focus-flight'), Date.now, (w) => explainWeb(w))
+  const here = { processName: WEB_APP, appName: 'Focus Flight', title: '' }
+  const away = { processName: APP_BACKGROUND, appName: '다른 앱·탭', title: '' }
+
+  // 비행 중에는 화면이 저절로 꺼지지 않게 한다 (웹은 화면 꺼짐과 앱 전환을 구분할 수 없으므로)
+  let lock: { release(): Promise<void> } | null = null
+  const syncWakeLock = async (): Promise<void> => {
+    const want = isActive(ctl.flight) && document.visibilityState === 'visible'
+    try {
+      if (want && !lock && webStatus.wakeLockSupported) {
+        const l = await (navigator as Navigator & { wakeLock: { request(t: 'screen'): Promise<{ release(): Promise<void>; addEventListener(e: string, f: () => void): void }> } }).wakeLock.request('screen')
+        lock = l
+        webStatus.wakeLock = true
+        l.addEventListener('release', () => {
+          lock = null
+          webStatus.wakeLock = false
+        })
+      } else if (!want && lock) {
+        await lock.release()
+        lock = null
+        webStatus.wakeLock = false
+      }
+    } catch {
+      webStatus.wakeLock = false
+    }
+  }
+
+  const { api, emit } = localApi(ctl, () => void syncWakeLock())
+  ctl.observeWindow(document.visibilityState === 'visible' ? here : away)
+
+  document.addEventListener('visibilitychange', () => {
+    // 숨겨진 순간을 이탈 시작으로 기록하고, 돌아오면 그 사이를 한꺼번에 계산한다 (백그라운드에선 타이머가 멈추므로)
+    if (document.visibilityState === 'hidden') ctl.observeWindow(away)
+    else ctl.observeWindow(here)
+    emit()
+  })
+  setInterval(() => {
+    ctl.tick()
+    emit()
+  }, 1000)
+
+  if ('serviceWorker' in navigator) {
+    void navigator.serviceWorker.register('./sw.js').catch(() => undefined)
+  }
+  return api
+}
+
 export const api: FocusFlightApi =
-  window.focusFlight ?? (platform === 'android' ? createAndroidApi() : createPreviewApi())
+  window.focusFlight ??
+  (platform === 'android' ? createAndroidApi() : platform === 'web' ? createWebApi() : createPreviewApi())

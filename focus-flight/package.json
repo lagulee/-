@@ -16,7 +16,8 @@
     "test:watch": "vitest",
     "dist": "electron-vite build && electron-builder --win",
     "build:mobile": "vite build --config vite.mobile.config.ts",
-    "android:sync": "npm run build:mobile && cap sync android"
+    "android:sync": "npm run build:mobile && cap sync android",
+    "build:pages": "vite build --config vite.pages.config.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
