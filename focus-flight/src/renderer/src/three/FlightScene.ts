@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { isTouchDevice } from '../device'
 import { CITIES } from '../../../shared/cities'
 import { greatCirclePath, slerp, type LatLon } from '../../../shared/geo'
 import { createAirplane } from './airplane'
@@ -156,7 +157,7 @@ export class FlightScene {
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true })
     // 휴대폰은 화면 밀도가 높아 그대로 그리면 무거우므로 낮춘다
-    const coarse = matchMedia('(pointer: coarse)').matches
+    const coarse = isTouchDevice()
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, coarse ? 1.25 : 1.5))
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
 

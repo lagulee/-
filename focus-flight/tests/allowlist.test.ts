@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  explainAndroid,
   explainWindow,
   hostMatches,
   siteTitleKeyword,
@@ -110,5 +111,22 @@ describe('siteTitleKeyword', () => {
     expect(siteTitleKeyword('www.github.com')).toBe('github')
     expect(siteTitleKeyword('docs.google.com')).toBe('docs')
     expect(siteTitleKeyword('x.ai')).toBeNull()
+  })
+})
+
+describe('explainAndroid', () => {
+  const env = { ownPackage: 'com.lagulee.focusflight', launchers: ['com.google.android.apps.nexuslauncher', 'com.android.settings'] }
+  const app = (pkg: string) => ({ processName: pkg, title: '' })
+  const l = { ...list, apps: ['com.spotify.music'] }
+
+  it('홈 화면은 neutral, 허용 앱은 allowed, 나머지는 blocked', () => {
+    expect(explainAndroid(app('com.google.android.apps.nexuslauncher'), l, env).verdict).toBe('neutral')
+    expect(explainAndroid(app('com.spotify.music'), l, env).verdict).toBe('allowed')
+    expect(explainAndroid(app('com.instagram.android'), l, env).verdict).toBe('blocked')
+    expect(explainAndroid(app('com.lagulee.focusflight'), l, env).verdict).toBe('allowed')
+  })
+
+  it('설정 앱이 홈 후보(FallbackHome)로 잡혀도 홈 화면으로 보지 않는다 (에뮬레이터에서 발견)', () => {
+    expect(explainAndroid(app('com.android.settings'), l, env).verdict).toBe('blocked')
   })
 })

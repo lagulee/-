@@ -160,7 +160,8 @@ export function explainAndroid(w: WindowInfo | null, list: AllowList, env: Andro
   if (pkg === SCREEN_OFF) return { verdict: 'allowed', reason: '화면 꺼짐' }
   if (pkg === APP_BACKGROUND) return { verdict: 'blocked', reason: 'Focus Flight를 벗어남 (사용 기록 권한이 없어 앱을 알 수 없음)' }
   if (pkg === env.ownPackage) return { verdict: 'allowed', reason: 'Focus Flight' }
-  if (env.launchers.includes(pkg)) return { verdict: 'neutral', reason: '홈 화면' }
+  // 설정 앱은 기기에 따라 홈 후보(FallbackHome)로 잡히지만 홈 화면이 아니다
+  if (env.launchers.includes(pkg) && pkg !== 'com.android.settings') return { verdict: 'neutral', reason: '홈 화면' }
   if (ANDROID_SYSTEM.includes(pkg)) return { verdict: 'neutral', reason: '시스템 화면' }
   if (list.apps.includes(pkg)) return { verdict: 'allowed', reason: '허용 앱' }
   return { verdict: 'blocked', reason: '허용 목록에 없는 앱' }

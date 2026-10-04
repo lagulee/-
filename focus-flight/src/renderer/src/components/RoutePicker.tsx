@@ -8,6 +8,7 @@ import type { FlightConfig } from '../../../shared/config'
 import { planRoute } from '../../../shared/controller'
 import { bucketOf, formatMinutes, type Bucket } from '../../../shared/durations'
 import { greatCirclePath, slerp, type LatLon } from '../../../shared/geo'
+import { isTouchDevice } from '../device'
 
 const W = 960
 const H = 560
@@ -275,7 +276,7 @@ export default function RoutePicker({ from, to, config, stamps, bucket, onPick }
         <button onClick={() => setView(WORLD)}>전체</button>
       </div>
       <div className="map-hint">
-        {matchMedia('(pointer: coarse)').matches
+        {isTouchDevice()
           ? '두 손가락: 확대·축소 · 끌기: 이동 · 도시 누르기: 도착지 선택'
           : '휠: 확대·축소 · 끌기: 이동 · 도시 클릭: 도착지 선택'}
       </div>

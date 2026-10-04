@@ -2,6 +2,7 @@ import { geoEquirectangular, geoPath, type GeoProjection } from 'd3-geo'
 import { feature, mesh } from 'topojson-client'
 import type { GeometryCollection, Topology } from 'topojson-specification'
 import { CITIES } from '../../../shared/cities'
+import { isTouchDevice } from '../device'
 
 /** 지도 데이터는 비행이 시작될 때만 필요하므로 지연 로드한다 */
 export interface GeoData {
@@ -170,7 +171,7 @@ let globeCache: HTMLCanvasElement | null = null
 export async function globeCanvas(): Promise<{ geo: GeoData; canvas: HTMLCanvasElement }> {
   const geo = await loadGeoData()
   // 휴대폰은 메모리를 아끼려고 절반 해상도
-  globeCache ??= paintGlobe(geo, matchMedia('(pointer: coarse)').matches ? 2048 : 4096)
+  globeCache ??= paintGlobe(geo, isTouchDevice() ? 2048 : 4096)
   return { geo, canvas: globeCache }
 }
 

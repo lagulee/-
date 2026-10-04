@@ -61,11 +61,25 @@ public class FocusMonitorPlugin extends Plugin {
     /** 홈 화면(런처) 패키지들. 홈 화면에 있는 것은 위반으로 보지 않는다 */
     static Set<String> launcherPackages(Context ctx) {
         Set<String> out = new HashSet<>();
+        PackageManager pm = ctx.getPackageManager();
         Intent home = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME);
-        for (ResolveInfo ri : ctx.getPackageManager().queryIntentActivities(home, 0)) {
-            out.add(ri.activityInfo.packageName);
+        for (ResolveInfo ri : pm.queryIntentActivities(home, 0)) {
+            if (isRealLauncher(ri)) out.add(ri.activityInfo.packageName);
         }
+        ResolveInfo def = pm.resolveActivity(home, PackageManager.MATCH_DEFAULT_ONLY);
+        if (def != null && def.activityInfo != null && isRealLauncher(def)) out.add(def.activityInfo.packageName);
         return out;
+    }
+
+    /**
+     * 설정 앱의 FallbackHome(부팅 직후 잠깐 쓰는 임시 홈)이나 시스템 선택 화면은 홈 앱이 아니다.
+     * 이걸 빼지 않으면 설정 앱을 홈 화면으로 잘못 보고 이탈로 판정하지 않는다.
+     */
+    private static boolean isRealLauncher(ResolveInfo ri) {
+        if (ri.activityInfo == null) return false;
+        String pkg = ri.activityInfo.packageName;
+        String name = ri.activityInfo.name;
+        return !"android".equals(pkg) && !"com.android.settings".equals(pkg) && (name == null || !name.endsWith("FallbackHome"));
     }
 
     private String labelOf(String pkg) {
