@@ -210,6 +210,13 @@ class WifiParserTest {
         assertEquals("cafe_2F", r.rankedNearby.first().ssid)
     }
 
+    @Test
+    fun `직접 지정한 SSID도 주변 목록으로 교정`() {
+        val nearby = listOf(NearbyNetwork("와이파이존_2층", -50, "[WPA2-PSK]"), NearbyNetwork("other", -40, "[ESS]"))
+        assertEquals("와이파이존_2층", WifiParser.findClosestNetwork("와이파이존 2층", nearby)?.ssid)
+        assertNull(WifiParser.findClosestNetwork("완전히다른이름", nearby))
+    }
+
     // ------------------------------------------------------------ 보안 방식
 
     @Test

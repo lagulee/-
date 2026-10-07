@@ -82,6 +82,13 @@ object WifiParser {
         )
     }
 
+    /** 사용자가 직접 지정한 SSID를 주변 목록 기준으로 교정한다. 비슷한 네트워크가 없으면 null. */
+    fun findClosestNetwork(ssid: String, nearby: List<NearbyNetwork>): NearbyNetwork? {
+        val networks = dedupeNearby(nearby)
+        if (networks.isEmpty() || ssid.isBlank()) return null
+        return correctSsid(Extracted(ssid.trim(), 1.0, Source.USER), networks).second
+    }
+
     // ---------------------------------------------------------------- QR
 
     private fun fromQr(qr: WifiQr, networks: List<NearbyNetwork>): ParseResult {
