@@ -34,7 +34,7 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - uses: android-actions/setup-android@v3
+      # ubuntu-latest 러너에는 Android SDK가 이미 설치되어 있고(ANDROID_HOME), 부족한 플랫폼은 AGP가 자동으로 받는다.
 
       - uses: gradle/actions/setup-gradle@v5
 
@@ -42,7 +42,7 @@ jobs:
         run: ./gradlew --stacktrace assembleDebug testDebugUnitTest lintDebug
 
       - name: Upload debug APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: silent-camera-debug-apk-${{ github.run_number }}
           path: silent-camera/app/build/outputs/apk/debug/*.apk
@@ -51,7 +51,7 @@ jobs:
 
       - name: Upload reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: silent-camera-reports-${{ github.run_number }}
           path: |
