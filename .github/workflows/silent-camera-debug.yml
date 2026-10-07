@@ -1,0 +1,61 @@
+name: SilentCamera debug APK
+
+on:
+  push:
+    paths:
+      - "silent-camera/**"
+      - ".github/workflows/silent-camera-debug.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: silent-camera-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: silent-camera
+    steps:
+      - uses: actions/checkout@v5
+
+      # 무음 보장: 셔터음을 강제로 내는 API가 코드에 들어오면 빌드를 실패시킨다.
+      - name: Guard against shutter-sound APIs
+        run: |
+          if grep -rnE "ImageCapture|MediaActionSound|VideoCapture" app/src; then
+            echo "::error::ImageCapture / MediaActionSound / VideoCapture 사용 금지"
+            exit 1
+          fi
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      - name: Build debug APK, unit tests, lint
+        run: ./gradlew --stacktrace assembleDebug testDebugUnitTest lintDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: silent-camera-debug-apk-${{ github.run_number }}
+          path: silent-camera/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: silent-camera-reports-${{ github.run_number }}
+          path: |
+            silent-camera/app/build/reports/
+            silent-camera/app/build/test-results/
+          if-no-files-found: ignore
+          retention-days: 7

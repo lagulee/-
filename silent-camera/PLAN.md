@@ -43,7 +43,7 @@ silent-camera/
       │  ├─ FrameGrabber.kt           // ImageAnalysis.Analyzer, 촬영 요청 시 프레임 1장 확보
       │  └─ DeviceOrientation.kt      // OrientationEventListener → Surface.ROTATION_*
       ├─ image/
-      │  ├─ FrameConverter.kt         // ImageProxy → Bitmap (회전 + 전면 미러 + 크롭)
+      │  ├─ FrameConverter.kt         // ImageProxy → Bitmap (회전 + 전면 미러)
       │  └─ TransformMath.kt          // 회전/미러 행렬 계산 (순수 함수, 단위 테스트 대상)
       ├─ storage/
       │  └─ PhotoRepository.kt        // MediaStore 저장, 최근 사진 조회
@@ -112,22 +112,10 @@ CameraUiState(
 ### 2.5 전체 화면 미리보기와 저장 범위
 
 - 폰(19.5:9)·태블릿(16:10) 화면은 센서(4:3)와 비율이 다름 → `PreviewView.ScaleType.FILL_CENTER`로 화면 가득 채우면 위/아래(또는 좌우)가 잘려 보임.
-- `UseCaseGroup` + `ViewPort`(PreviewView의 viewPort)로 두 UseCase를 묶으면 `imageProxy.cropRect`가 "화면에 보이는 영역"을 알려 줌.
-- **기본 정책: 보이는 그대로 저장(WYSIWYG)** — cropRect로 잘라서 저장. 해상도는 일부 줄어듦.
-- 대안: 4:3 원본 전체 저장 (해상도 최대, 단 화면에 안 보이던 영역도 포함). → 아래 "결정 필요 사항" 참고.
+- **확정: 4:3 원본 전체 저장** — ImageAnalysis 프레임을 자르지 않고 그대로 저장해 해상도를 최대로 쓴다.
+  화면에 안 보이던 위/아래(가로 시 좌우) 영역도 사진에 포함된다. (ViewPort/cropRect 크롭은 사용하지 않음)
 
-### 2.6 화면 회전 시 카메라가 끊기지 않게
-
-- `AndroidManifest`의 Activity에 `android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density"` 지정 → 회전 시 Activity 재생성 없음 → CameraX 바인딩 유지, Compose는 새 Configuration으로 재구성만 됨.
-- 카메라 바인딩은 Activity 라이프사이클에 한 번만 (`bindToLifecycle`), Compose 재구성에서 다시 바인딩하지 않도록 `CameraController`가 상태를 보관.
-- 상태는 ViewModel에 보관 → 혹시 재생성되더라도(다크모드 변경 등) 렌즈/줌/타이머 유지.
-- 180° 회전(가로→반대 가로)은 configuration change가 발생하지 않으므로 `DisplayManager.DisplayListener`로 감지해 Preview `targetRotation` 갱신 (`PreviewView`가 대부분 처리하지만 실기기로 확인).
-- 폴더블/멀티윈도우(탭의 분할 화면) 크기 변화도 같은 configChanges로 처리.
-
-### 2.7 저장 (MediaStore, 저장소 권한 없이)
-
-| API | 방식 | 권한 |
-|---|---|---|
+---|---|---|
 | 29+ (S22, Tab S10+) | `MediaStore.Images.Media.EXTERNAL_CONTENT_URI`, `RELATIVE_PATH = "Pictures/SilentCamera"`, `IS_PENDING=1` → 쓰기 → `IS_PENDING=0` | **불필요** |
 | 26–28 | `Pictures/SilentCamera` 디렉터리에 직접 파일 쓰기 → MediaStore에 `DATA` 경로로 insert (또는 MediaScanner) | `WRITE_EXTERNAL_STORAGE` (`android:maxSdkVersion="28"`) — 첫 촬영 시에만 요청 |
 
@@ -171,7 +159,7 @@ CameraUiState(
 3. git 커밋 (단계별 1커밋 이상) → 푸시
 4. **실기기 확인 항목** 전달
 
-> 빌드 환경 메모: 현재 작업 컨테이너에는 JDK 21과 Gradle은 있지만 Android SDK가 없습니다. 1단계에서 SDK command-line tools 설치를 시도하고, 네트워크 정책상 불가능하면 즉시 알려 드리고 대안(GitHub Actions에서 빌드)을 제안하겠습니다.
+> 빌드 환경: 작업 컨테이너에서 Android SDK를 받을 수 없어 빌드 확인은 GitHub Actions 결과로 한다. (`./gradlew assembleDebug testDebugUnitTest lintDebug` + 셔터음 API 사용 금지 검사)
 
 ### 1단계 — 프로젝트 골격
 - Gradle Kotlin DSL, version catalog, Compose BOM, CameraX 의존성, minSdk 26, 단일 `MainActivity`, 테마, configChanges 설정, `.gitignore`.
@@ -186,7 +174,7 @@ CameraUiState(
 - **실기기 확인**: 화면 가득 미리보기·왜곡 없음 / 탭에서 가로↔세로↔반대 가로 회전 시 미리보기가 검게 깜빡이거나 재시작되지 않음 / 홈 갔다 오기·화면 끄고 켜기 후 정상 복귀 / 분할 화면 진입.
 
 ### 4단계 — 무음 촬영 핵심 (ImageAnalysis → JPEG → MediaStore)
-- `ImageAnalysis`(최고 해상도, KEEP_ONLY_LATEST, RGBA_8888), `FrameGrabber`, `FrameConverter`(회전·크롭), `PhotoRepository`(API 29+ / 26–28 분기), 셔터 버튼 + 깜빡임 효과.
+- `ImageAnalysis`(최고 해상도, KEEP_ONLY_LATEST, RGBA_8888), `FrameGrabber`, `FrameConverter`(회전·미러), `PhotoRepository`(API 29+ / 26–28 분기), 셔터 버튼 + 깜빡임 효과.
 - 단위 테스트: 회전 행렬·파일명.
 - **실기기 확인**:
   - **소리 모드에서 셔터음이 전혀 나지 않음** (가장 중요)
@@ -219,12 +207,14 @@ CameraUiState(
 
 ---
 
-## 4. 결정이 필요한 사항 (기본값으로 진행 예정, 변경 원하면 알려 주세요)
+## 4. 확정된 결정 사항
 
-1. **저장 범위**: 보이는 화면 그대로 잘라서 저장(기본) vs 4:3 원본 전체 저장(해상도 최대)
-2. **전면 사진**: 미리보기처럼 거울 모드로 저장(기본) vs 반전 없는 실제 모습으로 저장
-3. **폰 회전 정책**: 세로 고정 + 아이콘만 회전(기본) vs 폰도 태블릿처럼 레이아웃 회전
-4. **패키지명/앱 이름**: `com.example.silentcamera` / "무음 카메라"(기본)
+1. **저장 범위**: 4:3 원본 전체 저장 (해상도 최대)
+2. **전면 사진**: 미리보기처럼 거울 모드로 저장
+3. **폰 회전 정책**: 세로 고정 + 아이콘만 회전
+4. **패키지명/앱 이름**: `com.example.silentcamera` / "무음 카메라"
+5. **빌드**: 작업 컨테이너에서 Android SDK 다운로드(dl.google.com)가 차단되어 GitHub Actions(`.github/workflows/silent-camera-debug.yml`)로 빌드.
+   푸시마다 디버그 APK를 아티팩트로 업로드.
 
 ## 5. 알려진 위험 요소
 

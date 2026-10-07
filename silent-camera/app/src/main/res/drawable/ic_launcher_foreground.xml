@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 카메라 본체 + 렌즈 + 음소거 사선 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M36,40 L44,40 L48,34 L60,34 L64,40 L72,40 Q76,40 76,44 L76,70 Q76,74 72,74 L36,74 Q32,74 32,70 L32,44 Q32,40 36,40 Z" />
+    <path
+        android:fillColor="#FF1E1E1E"
+        android:pathData="M54,46 A10,10 0 1,1 53.99,46 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,51 A5,5 0 1,1 53.99,51 Z" />
+    <path
+        android:strokeColor="#FFFF5252"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M34,32 L74,76" />
+</vector>
