@@ -11,6 +11,9 @@ concurrency:
   group: silent-camera-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write # 릴리스 생성·APK 업로드
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -48,6 +51,34 @@ jobs:
           path: silent-camera/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 30
+
+      # 로그인 없이 받을 수 있도록 고정 태그의 프리릴리스에 APK를 올린다.
+      # 다른 프로젝트(Focus Flight)의 "Latest" 릴리스를 건드리지 않도록 make_latest=false.
+      - name: Prepare release APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk SilentCamera-debug.apk
+
+      - name: Move rolling tag to this commit
+        run: |
+          git tag -f silent-camera-debug-latest "$GITHUB_SHA"
+          git push -f origin refs/tags/silent-camera-debug-latest
+
+      - name: Publish debug APK release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: silent-camera-debug-latest
+          name: "무음 카메라 디버그 빌드 (최신)"
+          prerelease: true
+          make_latest: "false"
+          overwrite_files: true
+          files: silent-camera/SilentCamera-debug.apk
+          body: |
+            무음 카메라 최신 디버그 APK입니다. 푸시할 때마다 자동으로 갱신됩니다.
+
+            - 브랜치: `${{ github.ref_name }}`
+            - 커밋: ${{ github.sha }}
+            - 빌드: #${{ github.run_number }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            설치: 아래 `SilentCamera-debug.apk`를 폰에서 받아 실행 (출처를 알 수 없는 앱 설치 허용 필요)
 
       - name: Upload reports
         if: always()
